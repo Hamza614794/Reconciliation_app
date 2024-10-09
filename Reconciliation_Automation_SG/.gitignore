@@ -1,4 +1,4 @@
-.countries_acronyms.json
-.currency_codes.json
-.parser_TT140_MasterCard.py
-.processing_bank_sources.py
+.countries_acronyms
+.currency_codes
+.parser_TT140_MasterCard
+.processing_bank_sources
