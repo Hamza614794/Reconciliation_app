@@ -2,7 +2,7 @@
 import plotly.graph_objects as go
 from Reconciliation_Automation_SG.parser_TT140_MasterCard import *
 from Reconciliation_Automation_SG.processing_bank_sources import *
-from Reconciliation_Automation_SG.database_actions import *
+#from Reconciliation_Automation_SG.database_actions import *
 
 
 def upload_all_sources():
@@ -103,7 +103,7 @@ def handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_
                 st.header("Transactions à recycler")
                 st.dataframe(df_recycled , use_container_width=True)
                 df_recycled.rename(columns={'FILIALE': 'BANQUE'}, inplace=True)
-                st.button(":floppy_disk: Stocker les rejets recyclées dans la base de donnèes" , on_click= lambda: insert_recycles_data(df_recycled) , key= "stocker_recycles_button1",type="primary" , use_container_width=True)
+                #st.button(":floppy_disk: Stocker les rejets recyclées dans la base de donnèes" , on_click= lambda: insert_recycles_data(df_recycled) , key= "stocker_recycles_button1",type="primary" , use_container_width=True)
                 
                 #st.write(len(df_recycled))
                 #st.write(merged_df)
@@ -142,9 +142,7 @@ def handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_
                 col4, col6 = st.columns(3)
                 with col4:
                     excel_path_email_1 , file_name_1= download_file(recon=True, df=st.session_state.df_reconciliated, file_partial_name='results_recon_MC', button_label=":arrow_down: Téléchargez les résultats de réconciliation", run_date=run_date)
-                with col6:
-                    st.button(":floppy_disk: Stocker le résultat de réconciliation" , on_click= lambda: insert_reconciliated_data(st.session_state.df_reconciliated) , key= "stocker_button1",type="primary" , use_container_width=True)
-
+                
             if st.session_state.df_non_reconciliated is not None:
                 st.header('Résultat de la Réconciliation')
     
@@ -165,8 +163,8 @@ def handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_
                 col4, col5, col6= st.columns(3)
                 with col4:
                     excel_path_email_1 , file_name_1= download_file(recon=True, df=st.session_state.df_non_reconciliated, file_partial_name='results_recon_MC', button_label=":arrow_down: Téléchargez les résultats de réconciliation", run_date=run_date)
-                with col5:
-                    st.button(":floppy_disk: Stocker le résultat de réconciliation " , on_click= lambda: insert_reconciliated_data(st.session_state.df_non_reconciliated) , key= "stocker_button2",type="primary" , use_container_width=True)
+                #with col5:
+                    #st.button(":floppy_disk: Stocker le résultat de réconciliation " , on_click= lambda: insert_reconciliated_data(st.session_state.df_non_reconciliated) , key= "stocker_button2",type="primary" , use_container_width=True)
 
 
                 st.header('Résumé des rejets')
@@ -174,8 +172,8 @@ def handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_
                 col7, col9 = st.columns(2)
                 with col7 :
                     excel_path_email_2 , file_name_2 = download_file(recon=False, df=st.session_state.df_summary, file_partial_name='rejected_summary_MC', button_label=":arrow_down: Téléchargez le résumé des rejets", run_date=run_date)
-                with col9 :
-                    st.button(":floppy_disk: Stocker le résumé des rejets " , on_click= lambda: insert_rejection_summary(st.session_state.df_summary) , key= "stocker_button3",type="primary" , use_container_width=True)
+                #with col9 :
+                   # st.button(":floppy_disk: Stocker le résumé des rejets " , on_click= lambda: insert_rejection_summary(st.session_state.df_summary) , key= "stocker_button3",type="primary" , use_container_width=True)
               
                 st.divider()
 
@@ -187,8 +185,8 @@ def handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_
                 col10 ,col11 , col12 = st.columns(3)
                 with col10:
                     excel_path_email_3 , file_name_3= download_file(recon=False, df=st.session_state.df_rejections, file_partial_name='rejected_transactions_MC', button_label=":arrow_down: Téléchargez les rejets", run_date=run_date)
-                with col12:
-                    st.button(":floppy_disk: Stocker les rejets " , on_click= lambda: insert_rejected_transactions(st.session_state.df_rejections, run_date) , key= "stocker_button4",type="primary" , use_container_width=True)
+                #with col12:
+                    #st.button(":floppy_disk: Stocker les rejets " , on_click= lambda: insert_rejected_transactions(st.session_state.df_rejections, run_date) , key= "stocker_button4",type="primary" , use_container_width=True)
 
         else:
             st.warning("Veuillez charger tous les fichiers nécessaires pour continuer.")
