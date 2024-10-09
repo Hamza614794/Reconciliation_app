@@ -1,5 +1,4 @@
 #import streamlit as st
-import plotly.graph_objects as go
 from Reconciliation_Automation_SG.parser_TT140_MasterCard import *
 from Reconciliation_Automation_SG.processing_bank_sources import *
 from Reconciliation_Automation_SG.database_actions import *
@@ -200,11 +199,11 @@ def main():
     st.sidebar.image("assets/Logo_hps_0.png", use_column_width=True)
     st.sidebar.divider()
     st.sidebar.page_link("app.py", label="**Accueil**", icon="🏠")
-    st.sidebar.page_link("pages/results_recon.py", label="**:alarm_clock: Historique**")
-    st.sidebar.page_link("pages/Dashboard.py", label="  **📊 Tableau de bord**" )
+    #st.sidebar.page_link("pages/results_recon.py", label="**:alarm_clock: Historique**")
+    #st.sidebar.page_link("pages/Dashboard.py", label="  **📊 Tableau de bord**" )
     st.sidebar.page_link("pages/MasterCard_UI.py", label="**🔀 Réconciliation MasterCard**")
-    st.sidebar.page_link("pages/calendar_view.py", label="**📆 Vue Agenda**")
-    st.sidebar.page_link("pages/rejects_recycles.py", label="**♻️ Rejets recylés**")
+    #st.sidebar.page_link("pages/calendar_view.py", label="**📆 Vue Agenda**")
+    #st.sidebar.page_link("pages/rejects_recycles.py", label="**♻️ Rejets recylés**")
     
     st.header("📤 :violet[Réconciliation MASTERCARD]", divider='rainbow')
     uploaded_mastercard_file = st.file_uploader(":arrow_down: **Chargez le fichier Mastercard**", type=["001"])
