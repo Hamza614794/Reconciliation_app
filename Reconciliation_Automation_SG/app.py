@@ -23,7 +23,7 @@ def run():
     st.sidebar.page_link("app.py", label="**Accueil**", icon="🏠")
     #st.sidebar.page_link("pages/results_recon.py", label="**:alarm_clock: Historique**")
     #st.sidebar.page_link("pages/Dashboard.py", label="**📊 Tableau de bord**" )
-    #st.sidebar.page_link("pages/MasterCard_UI.py", label="**🔀 Réconciliation MasterCard**")
+    st.sidebar.page_link("pages/MasterCard_UI.py", label="**🔀 Réconciliation MasterCard**")
     #st.sidebar.page_link("pages/calendar_view.py", label="**📆 Vue Agenda**")
     #st.sidebar.page_link("pages/rejects_recycles.py", label="**♻️ Rejets recylés**")
     #st.sidebar.page_link("pages/rejects_recycled_template.py", label="**:arrow_down: Template rejets recylées**")
