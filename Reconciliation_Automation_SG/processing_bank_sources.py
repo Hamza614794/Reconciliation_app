@@ -209,7 +209,8 @@ def format_columns(df):
 
 # Merge the dataframes on relevant common columns
 def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df):
-    # Merge POS and Saisie Manuelle dataframes
+            # Merge POS and Saisie Manuelle dataframes
+        # Merge the dataframes on relevant common columns
     merged_df = pd.merge(
         filtered_pos_df,
         filtered_saisie_manuelle_df,
@@ -229,24 +230,23 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
 
     # Fill missing values with 0 and sum the 'NBRE_TRANSACTION' values
     merged_df['NBRE_TRANSACTION'] = (merged_df['NBRE_TRANSACTION_pos'].fillna(0) +
-                                     merged_df['NBRE_TRANSACTION_saisie'].fillna(0) +
-                                     merged_df['NBRE_TRANSACTION'].fillna(0))
+                                    merged_df['NBRE_TRANSACTION_saisie'].fillna(0) +
+                                    merged_df['NBRE_TRANSACTION'].fillna(0))
 
     # Convert 'NBRE_TRANSACTION' to integer
     merged_df['NBRE_TRANSACTION'] = merged_df['NBRE_TRANSACTION'].astype(int)
 
-    # Use MONTANT_TOTAL from filtered_pos_df
-    merged_df['MONTANT_TOTAL'] = merged_df['MONTANT_TOTAL_pos'].fillna(0).infer_objects()
+    merged_df['MONTANT_TOTAL'] = (merged_df['MONTANT_TOTAL_pos'].fillna(0) +
+                                    merged_df['MONTANT_TOTAL_saisie'].fillna(0) +
+                                    merged_df['MONTANT_TOTAL'].fillna(0))
 
-
-    # Use MONTANT_TOTAL from filtered_pos_df
-    merged_df['MONTANT_TOTAL'] = merged_df['MONTANT_TOTAL_pos'].fillna(0)
 
     # Drop unnecessary columns
     merged_df.drop(['NBRE_TRANSACTION_pos', 'NBRE_TRANSACTION_saisie', 'MONTANT_TOTAL_pos', 'MONTANT_TOTAL_saisie'], axis=1, inplace=True)
 
     # Drop duplicate rows
     merged_df.drop_duplicates(subset=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION', 'DATE_TRAI'], inplace=True)
+
     total_nbre_transactions = merged_df['NBRE_TRANSACTION'].sum()
 
     merged_df = merged_df.reset_index(drop=True)
