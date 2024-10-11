@@ -399,8 +399,23 @@ def handle_non_match_reconciliation(file_path,merged_df , run_date):
             df_reconciliated['Nbre Total de Rejets'] = pd.to_numeric(df_reconciliated['Nbre Total de Rejets'], errors='coerce').fillna(0).astype(int)
 
 
-            df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant Total de Transactions'] - df_reconciliated['Montant de Rejets']
-            df_reconciliated['Nbre de Transactions (Couverture)'] = df_reconciliated['Nbre Total De Transactions'] - df_reconciliated['Nbre Total de Rejets']
+            #df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant Total de Transactions'] - df_reconciliated['Montant de Rejets']
+           # df_reconciliated['Nbre de Transactions (Couverture)'] = df_reconciliated['Nbre Total De Transactions'] - df_reconciliated['Nbre Total de Rejets']
+
+            # Update 'Montant de Transactions (Couverture)' only for rows where Type is 'ACHAT' and exclude empty Type (CREDIT VOUCHER)
+            df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated.apply(
+                lambda row: row['Montant Total de Transactions'] - row['Montant de Rejets'] 
+                if row['Type'] == 'ACHAT' else row['Montant Total de Transactions'],
+                axis=1
+            )
+
+            # Update 'Nbre de Transactions (Couverture)' only for rows where Type is 'ACHAT' and exclude empty Type (CREDIT VOUCHER)
+            df_reconciliated['Nbre de Transactions (Couverture)'] = df_reconciliated.apply(
+                lambda row: row['Nbre Total De Transactions'] - row['Nbre Total de Rejets']
+                if row['Type'] == 'ACHAT' else row['Nbre Total De Transactions'],
+                axis=1
+            )
+
 
     # Fill NaN values in 'Nbre Total de Rejets' with 0 before converting to integer type
     df_reconciliated['Nbre Total de Rejets'] = df_reconciliated['Nbre Total de Rejets'].replace('', 0).fillna(0).astype(int)
