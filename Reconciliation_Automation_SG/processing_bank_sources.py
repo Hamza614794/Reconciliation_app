@@ -12,11 +12,6 @@ import streamlit as st
 import io
 import locale
 
-pd.set_option('future.no_silent_downcasting', True)
-pd.options.display.float_format = '{:,.2f}'.format
-#locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
-
-
 # Define the function to read CSV files with delimiters
 def read_csv_with_delimiters(file_path, default_columns=None, default_delimiter=','):
     """
@@ -61,7 +56,7 @@ def save_uploaded_file(uploaded_file):
 
 # standard columns for each source file
 default_columns_cybersource = ['NBRE_TRANSACTION', 'MONTANT_TOTAL', 'CUR', 'FILIALE', 'RESEAU', 'TYPE_TRANSACTION']
-default_columns_saisie_manuelle = ['NBRE_TRANSACTION', 'MONTANT_TOTAL', 'CUR', 'FILIALE', 'RESEAU']
+default_columns_saisie_manuelle = ['NBRE_TRANSACTION', 'MONTANT_TOTAL', 'CUR', 'FILIALE', 'RESEAU', 'TYPE_TRANSACTION']
 default_columns_pos = ['FILIALE', 'RESEAU', 'TYPE_TRANSACTION', 'DATE_TRAI', 'CUR', 'NBRE_TRANSACTION', 'MONTANT_TOTAL']
 
 def reading_cybersource(cybersource_file):
@@ -76,7 +71,7 @@ def reading_cybersource(cybersource_file):
         df_cybersource['CUR'] = df_cybersource['CUR'].astype(str)
         return df_cybersource
     else:
-        df_cybersource = pd.DataFrame(columns=default_columns_saisie_manuelle)
+        df_cybersource = pd.DataFrame(columns=default_columns_cybersource)
         #st.write("The Saisie Manuelle file does not exist at the specified path.")
 
 # Read Saisie Manuelle file
@@ -84,6 +79,7 @@ def reading_saisie_manuelle(saisie_manuelle_file):
     if os.path.exists(saisie_manuelle_file):
         df_sai_manuelle = read_csv_with_delimiters(saisie_manuelle_file, default_columns_saisie_manuelle)
         df_sai_manuelle.columns = df_sai_manuelle.columns.str.strip()
+        df_sai_manuelle['TYPE_TRANSACTION'] = 'ACHAT'
         df_sai_manuelle = df_sai_manuelle.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
         # handle unified format of columns for merging after
         df_sai_manuelle['RESEAU'] = df_sai_manuelle['RESEAU'].astype(str)
@@ -198,18 +194,9 @@ def standardize_date_format(date_column, desired_format='%Y-%m-%d'):
     # Convert all dates to datetime objects
     date_column = pd.to_datetime(date_column , dayfirst=False  , yearfirst=True)
     # Format all datetime objects to the desired format
-    date_column = date_column.dt.strftime(desired_format)
+    date_column = date_column.dt.strftime(desired_format )
 
     return date_column
-
-
-def format_number(value):
-    """Format number to French style with thousands separator as '.' and decimal as ','."""
-    if pd.isna(value):
-        return value  # Return NaN as is
-    # Use '{:,.2f}' to ensure two decimal points, then replace characters for French format
-    formatted_value = '{:,.2f}'.format(value).replace(',', 'X').replace('.', ',').replace('X', '.')
-    return formatted_value
 
 
 def format_columns(df):
@@ -220,16 +207,35 @@ def format_columns(df):
             )
     return df
 
-
+def format_number(value):
+    """Format number to French style with thousands separator as '.' and decimal as ','."""
+    if pd.isna(value):
+        return value  # Return NaN as is
+    # Use '{:,.2f}' to ensure two decimal points, then replace characters for French format
+    formatted_value = '{:,.2f}'.format(value).replace(',', 'X').replace('.', ',').replace('X', '.')
+    return formatted_value
 
 # Merge the dataframes on relevant common columns
 def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df):
-            # Merge POS and Saisie Manuelle dataframes
-        # Merge the dataframes on relevant common columns
+
+    # Ensure 'TYPE_TRANSACTION' column exists in each DataFrame, if not, create it with default empty values
+    if 'TYPE_TRANSACTION' not in filtered_cybersource_df.columns:
+        filtered_cybersource_df['TYPE_TRANSACTION'] = ''
+    
+    if 'TYPE_TRANSACTION' not in filtered_saisie_manuelle_df.columns:
+        filtered_saisie_manuelle_df['TYPE_TRANSACTION'] = ''
+    
+    if 'TYPE_TRANSACTION' not in filtered_pos_df.columns:
+        filtered_pos_df['TYPE_TRANSACTION'] = ''
+
+    # Filter cybersource_df to include only rows with TYPE_TRANSACTION == 'ACHAT'
+    filtered_cybersource_df = filtered_cybersource_df[filtered_cybersource_df['TYPE_TRANSACTION'] == 'ACHAT']
+
+    # Merge POS and Saisie Manuelle dataframes
     merged_df = pd.merge(
         filtered_pos_df,
         filtered_saisie_manuelle_df,
-        on=['FILIALE', 'RESEAU', 'CUR'],
+        on=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION'],
         suffixes=('_pos', '_saisie'),
         how='outer'  # Use outer join to keep all rows from both dataframes
     )
@@ -245,23 +251,29 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
 
     # Fill missing values with 0 and sum the 'NBRE_TRANSACTION' values
     merged_df['NBRE_TRANSACTION'] = (merged_df['NBRE_TRANSACTION_pos'].fillna(0) +
-                                    merged_df['NBRE_TRANSACTION_saisie'].fillna(0) +
-                                    merged_df['NBRE_TRANSACTION'].fillna(0))
-
-    # Convert 'NBRE_TRANSACTION' to integer
+                                     merged_df['NBRE_TRANSACTION_saisie'].fillna(0) +
+                                     merged_df['NBRE_TRANSACTION'].fillna(0))
+    
     merged_df['NBRE_TRANSACTION'] = merged_df['NBRE_TRANSACTION'].astype(int)
 
-    merged_df['MONTANT_TOTAL'] = (merged_df['MONTANT_TOTAL_pos'].fillna(0) +
+    # Convert 'NBRE_TRANSACTION' to integer
+    merged_df['MONTANT_TOTAL'] = (
+                                    merged_df['MONTANT_TOTAL_pos'].fillna(0) +
                                     merged_df['MONTANT_TOTAL_saisie'].fillna(0) +
-                                    merged_df['MONTANT_TOTAL'].fillna(0))
+                                    merged_df['MONTANT_TOTAL'].fillna(0)
+)
+    # Use MONTANT_TOTAL from filtered_pos_df
+    #merged_df['MONTANT_TOTAL'] = merged_df['MONTANT_TOTAL_pos'].fillna(0)
 
+
+    # Use MONTANT_TOTAL from filtered_pos_df
+    #merged_df['MONTANT_TOTAL'] = merged_df['MONTANT_TOTAL_pos'].fillna(0)
 
     # Drop unnecessary columns
     merged_df.drop(['NBRE_TRANSACTION_pos', 'NBRE_TRANSACTION_saisie', 'MONTANT_TOTAL_pos', 'MONTANT_TOTAL_saisie'], axis=1, inplace=True)
 
     # Drop duplicate rows
     merged_df.drop_duplicates(subset=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION', 'DATE_TRAI'], inplace=True)
-
     total_nbre_transactions = merged_df['NBRE_TRANSACTION'].sum()
 
     merged_df = merged_df.reset_index(drop=True)
@@ -300,16 +312,22 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
         for idx, row in df_merged.iterrows():
             filiale = row['FILIALE']
             reseau = row['RESEAU']
+            type = row['TYPE_TRANSACTION']
             
             # Find matching row in summary
-            match = summary[(summary['FILIALE'] == filiale) & (summary['RESEAU'] == reseau)]
+            match = summary[(summary['FILIALE'] == filiale) & (summary['RESEAU'] == reseau) & (type == 'ACHAT')]
             if not match.empty:
                 # Merge and append the first matching row, then drop it from summary to ensure it only merges once
-                summary = summary.drop(match.index)
-                merged_row = row.copy()
-                merged_row['NBRE_TRANSACTION'] = row['NBRE_TRANSACTION'] + match.iloc[0]['NBRE_TRANSACTION']
-                merged_row['MONTANT_TOTAL'] = row['MONTANT_TOTAL'] + match.iloc[0]['MONTANT_TOTAL']
-                merged_rows.append(merged_row)
+                match_row = match.iloc[0]
+                summary = summary.drop(match.index)  # Ensure match is only used once
+
+                merged_row = row.copy()  # Create a copy of the current row
+            
+                # Add NBRE_TRANSACTION and MONTANT_TOTAL values from matching row
+                merged_row['NBRE_TRANSACTION'] = row['NBRE_TRANSACTION'] + match_row['NBRE_TRANSACTION']
+                merged_row['MONTANT_TOTAL'] = row['MONTANT_TOTAL'] + match_row['MONTANT_TOTAL']
+
+                merged_rows.append(merged_row)  # Add merged row to the result
             else:
                 merged_rows.append(row)
         
@@ -358,8 +376,6 @@ def populating_table_reconcialited(merged_df):
     merged_df = merged_df[new_columns]
     return merged_df
 
-
-    
 def handle_exact_match_csv(merged_df , run_date):
     populating_table_reconcialited(merged_df)
     df_reconciliated = merged_df.copy()
@@ -367,7 +383,7 @@ def handle_exact_match_csv(merged_df , run_date):
     formatted_date = run_date_new.strftime('%Y-%m-%d')
     df_reconciliated['Date'] = formatted_date
     df_reconciliated['Rapprochement'] = 'ok'
-    df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant Total de Transactions'].fillna(0)
+    df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant Total de Transactions']
     df_reconciliated['Nbre de Transactions (Couverture)'] = df_reconciliated['Nbre Total De Transactions']
     df_reconciliated = format_columns(df_reconciliated)
     #df_reconciliated.to_csv('reconciliated.csv', index=False)
@@ -434,19 +450,6 @@ def handle_non_match_reconciliation(file_path,merged_df , run_date):
                 if row['Type'] == 'ACHAT' else row['Nbre Total De Transactions'],
                 axis=1
             )
-
-            # Function to format numbers in the French style
-            def format_number_french(value):
-                try:
-                    return locale.format_string('%.2f', value, grouping=True).replace(',', ' ').replace('.', ',')
-                except ValueError:
-                    return value  # Return value as is if it's not a number
-            
-            # Apply French formatting to the columns that require it
-            df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant de Transactions (Couverture)'].apply(format_number_french)
-            df_reconciliated['Montant Total de Transactions'] = df_reconciliated['Montant Total de Transactions'].apply(format_number_french)
-            df_reconciliated['Montant de Rejets'] = df_reconciliated['Montant de Rejets'].apply(format_number_french)
-
 
     # Fill NaN values in 'Nbre Total de Rejets' with 0 before converting to integer type
     df_reconciliated['Nbre Total de Rejets'] = df_reconciliated['Nbre Total de Rejets'].replace('', 0).fillna(0).astype(int)
