@@ -10,9 +10,12 @@ from openpyxl.styles import Font, PatternFill, Alignment, numbers
 from openpyxl.worksheet.table import Table, TableStyleInfo
 import streamlit as st
 import io
+import locale
 
 pd.set_option('future.no_silent_downcasting', True)
 pd.options.display.float_format = '{:,.2f}'.format
+#locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+
 
 # Define the function to read CSV files with delimiters
 def read_csv_with_delimiters(file_path, default_columns=None, default_delimiter=','):
@@ -200,12 +203,24 @@ def standardize_date_format(date_column, desired_format='%Y-%m-%d'):
     return date_column
 
 
-# Function to format columns
+def format_number(value):
+    """Format number to French style with thousands separator as '.' and decimal as ','."""
+    if pd.isna(value):
+        return value  # Return NaN as is
+    # Use '{:,.2f}' to ensure two decimal points, then replace characters for French format
+    formatted_value = '{:,.2f}'.format(value).replace(',', 'X').replace('.', ',').replace('X', '.')
+    return formatted_value
+
+
 def format_columns(df):
     for col in df.columns:
         if 'Montant' in col:
-            df[col] = df[col].apply(lambda x: '{:,.2f}'.format(x) if isinstance(x, (int, float)) else x)
+            df[col] = df[col].apply(
+                lambda x: format_number(x) if pd.notnull(x) and isinstance(x, (int, float)) else x
+            )
     return df
+
+
 
 # Merge the dataframes on relevant common columns
 def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df):
@@ -343,6 +358,8 @@ def populating_table_reconcialited(merged_df):
     merged_df = merged_df[new_columns]
     return merged_df
 
+
+    
 def handle_exact_match_csv(merged_df , run_date):
     populating_table_reconcialited(merged_df)
     df_reconciliated = merged_df.copy()
@@ -350,7 +367,7 @@ def handle_exact_match_csv(merged_df , run_date):
     formatted_date = run_date_new.strftime('%Y-%m-%d')
     df_reconciliated['Date'] = formatted_date
     df_reconciliated['Rapprochement'] = 'ok'
-    df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant Total de Transactions']
+    df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant Total de Transactions'].fillna(0)
     df_reconciliated['Nbre de Transactions (Couverture)'] = df_reconciliated['Nbre Total De Transactions']
     df_reconciliated = format_columns(df_reconciliated)
     #df_reconciliated.to_csv('reconciliated.csv', index=False)
@@ -392,6 +409,8 @@ def handle_non_match_reconciliation(file_path,merged_df , run_date):
             df_reconciliated.loc[match_idx, 'Nbre Total de Rejets'] = nbr_rejets
             df_reconciliated.loc[match_idx, 'Montant de Rejets'] = montant_rejets
 
+            
+
             # Convert 'Montant Total de Transactions' and 'Montant de Rejets' to numeric, forcing invalid parsing to NaN
             df_reconciliated['Montant Total de Transactions'] = pd.to_numeric(df_reconciliated['Montant Total de Transactions'], errors='coerce').fillna(0)
             df_reconciliated['Montant de Rejets'] = pd.to_numeric(df_reconciliated['Montant de Rejets'], errors='coerce').fillna(0)
@@ -415,6 +434,18 @@ def handle_non_match_reconciliation(file_path,merged_df , run_date):
                 if row['Type'] == 'ACHAT' else row['Nbre Total De Transactions'],
                 axis=1
             )
+
+            # Function to format numbers in the French style
+            def format_number_french(value):
+                try:
+                    return locale.format_string('%.2f', value, grouping=True).replace(',', ' ').replace('.', ',')
+                except ValueError:
+                    return value  # Return value as is if it's not a number
+            
+            # Apply French formatting to the columns that require it
+            df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated['Montant de Transactions (Couverture)'].apply(format_number_french)
+            df_reconciliated['Montant Total de Transactions'] = df_reconciliated['Montant Total de Transactions'].apply(format_number_french)
+            df_reconciliated['Montant de Rejets'] = df_reconciliated['Montant de Rejets'].apply(format_number_french)
 
 
     # Fill NaN values in 'Nbre Total de Rejets' with 0 before converting to integer type
