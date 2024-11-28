@@ -1,0 +1,20 @@
+REPORT EP-100A  OUTGOING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      1
+ SYSTEM DATE 24/11/05    RELEASE  4.00            VALIDATION EXCEPTION DETAIL REPORT                        E/P PROC. DATE   24/11/05
+ HIGHTECH PAYMENT SYSTEMS                                   CENTER 489316                                               RUN NO    002
+                                                                                                                                     
+                                                                                                                                    
+                        RECORD   ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+---10
+ FILE            1                                                                                                                   
+ BATCH          11         227                                                                                                       
+                                                                                                                                     
+                                 05004582970359043900000   74893164310101491702627000000001104000000000000   000054000000969D SIGN SA
+                                 RLU            \Antananarivo\MG 481500000     1009D4202405 2 0543100                                
+ V0765 Merchant Category Code                                    ****                                                                
+       is not valid for                                                                                                              
+       Original Presentments                                                                                                         
+                                 0501            000000                                                          8553090671     MG293
+                                 001000000000000  000000  0S  0                           000000000                                  
+                                 0505464309312240018000054000000969002FCS    0000 000000000000N                                      
+                                                                                  0000000000000000  4                                
+                                 050700001241104E0F0C8450        EFC54DB100223800C30361519996E4B10112008000800003A42002000054000000 
+

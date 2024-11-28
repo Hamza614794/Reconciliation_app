@@ -85,13 +85,29 @@ def handle_recon(
         recycled_file_path = save_uploaded_file(uploaded_recycled_file)
         df_recyc = pd.read_excel(recycled_file_path)
 
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            # Lister tous les fichiers dans le ZIP
+            for file_name in zip_ref.namelist():
+                if file_name.endswith('.TXT'):
+
+                    with zip_ref.open(file_name) as file:
+                        content = file.read().decode('utf-8')
+                        # Appliquer l'extraction des données sur le fichier
+                        #transaction_data = extract_transaction_data(file_name, content)
+                        #transaction_list.append(transaction_data)
+                        #transaction_list = []
+                        #transaction_data = extract_transaction_data(file_name, content)
+                        #transaction_list.append(transaction_data)
+                        #print(transaction_list)
+                        print(file_name)
         # Perform merging with recycled data
         result_df = merging_with_recycled(
             recycled_file_path,
             filtered_cybersource_df,
             filtered_saisie_manuelle_df,
             filtered_pos_df,
-            filtering_date
+            filtering_date,
+            file_name, content, zip_file_path, zip_reject_path
         )
         st.header("Résultats de réconciliation")
         st.dataframe(result_df, use_container_width=True)

@@ -1,0 +1,312 @@
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      1
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+                           ORIGINAL DATE            24310          ORIGINAL TRAN CODE/QUALIFIER      05/0                            
+                           ORIGINAL BATCH               3          CURRENCY CODE                 XOF(952)                            
+                           ORIGINAL BATCH ITEM         79          SOURCE AMOUNT                     1.00                            
+                                                                                                                                     
+ RETURNED REASON           D2  TRANSACTION AMOUNT CONVERSION EQ ZERO                                                                 
+                                                                                                                                     
+      Returned Credit          ----     Required Data                                                                                
+                                                                                                                                     
+ Acct Number & Extension   4974138507200436000                     Merchant State/Prov. Code                                         
+ Floor Limit Indicator                                             Requested Payment Service                                         
+ CRB/Exception File Ind                                            Number of Payment Forms                                           
+ Acquirer Reference Nbr    74637414310101491929972                 Usage Code                1                                       
+ Acquirer's Business ID    00000000                                Chargeback Reason Code    00                                      
+ Purchase Date             20241105                                Settlement Flag           9                                       
+ Destination Amount        000000000000                            Auth Characteristics Ind  N                                       
+ Destination Currency Code                                         Authorization Code        544104                                  
+ Source Amount             000000000100                            POS Terminal Capability   5                                       
+ Source Currency Code      952                                     Cardholder ID Method                                              
+ Merchant Name             SOFITEL                                 Collection-Only Flag                                              
+ Merchant City             ABIDJAN                                 POS Entry Mode            05                                      
+ Merchant Country Code     CI                                      Central Processing Date   20241105                                
+ Merchant Category Code    7011                                    Reimbursement Attribute   0                                       
+ Merchant ZIP Code         20000                                                                                                     
+                                                                                                                                     
+      Returned Credit          ----     Additional Data                                                                              
+                                                                                                                                     
+ Business Format Code                                              Conversion Date           00000000                                
+ Token Assurance Method                                            Additional Token Response 0                                       
+ Rate Table ID                                                     Reserved Data             0                                       
+ Reserved                  000000                                  Acceptance Terminal Ind                                           
+ Documentation Indicator                                           Prepaid Card Indicator                                            
+ Member Message Text                                               Service Development Field 0                                       
+ Special Condition Ind                                             AVS Response Code         S                                       
+ Fee Program Indicator                                             Authorization Source Code B                                       
+ Issuer Charge                                                     Purchase Id Format                                                
+ PFX Applied Indicator                                             Account Selection         0                                       
+ Card Acceptor ID          8552084063                              Installment Payment Count                                         
+ Terminal ID               CI042201                                Purchase Identifier                                               
+ Nat'l Reimbursement Fee   000000000000                            Cashback                  000000000                               
+ Mail/Phn/Ecomm & Pymt Ind                                         Chip Condition Code                                               
+ Special Chargeback Ind                                            POS Environment                                                   
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      2
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+      Returned Credit          ----     Payment Service Data                                                                         
+                                                                                                                                     
+ Transaction Identifier    000000000000000                         ECommerce Goods Indicator                                         
+ Authorized Amount         000000000001                            Merchant Verification Val                                         
+ Auth Currency Cd          952                                     Interchange Fee Amount    000000000000000                         
+ Authorization Response Cd 00                                      Interchange Fee Sign                                              
+ Validation Code                                                   Src to Base Curr Ex Rate  0000000                                 
+ Excluded Trans ID Rsn                                             Base to Dest Curr Ex Rate 0000000                                 
+ CRS Processing Code                                               Optional Issuer ISA Amt   000000000000                            
+ Chargeback Rights Ind                                             Product Id                                                        
+ Multiple Clearing Seq Nbr 00                                      Program ID                                                        
+ Multiple Clearing Seq Cnt 00                                      Dynamic Currency Conv Ind                                         
+ Market-Specific Auth Data                                         Acct Type Identification                                          
+ Total Authorized Amount   000000000000                            Spend Qualified Indicator                                         
+ Information Indicator     N                                       PAN Token                 0000000000000000                        
+ Merchant Telephone Number                                         Account Funding Source                                            
+ Additional Data Indicator                                         CVV2 Result Code                                                  
+ Merchant Volume Indicator                                                                                                           
+                                                                                                                                     
+      Returned Credit          ----     Chip Card Transaction Data                                                                   
+                                                                                                                                     
+ Transaction Type          00                                      Iss Appl Data, Byte 3     01                                      
+ Card Sequence Number      000                                     Term Verification Results 0000000000                              
+ Terminal Transaction Date 241105                                  Iss Appl Data, Byte 4-7                                           
+ Terminal Capability Prof. 000000                                  Cryptogram Amount         000000000001                            
+ Terminal Country Code     854                                     Iss Appl Data, Byte 8                                             
+ Terminal Serial Number                                            Iss Appl Data, Byte 9-16                                          
+ Unpredictable Number      00000000                                Iss Appl Data, Byte 1                                             
+ Appl Transaction Counter  0000                                    Iss Appl Data, Byte 17                                            
+ Appl Interchange Profile  0000                                    Iss Appl Data, Byte 18-32                                         
+ Cryptogram                0000000000000000                        Form Factor Indicator                                             
+ Iss Appl Data, Byte 2                                             Issuer Script 1 Results                                           
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      3
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+                           ORIGINAL DATE            24310          ORIGINAL TRAN CODE/QUALIFIER      05/0                            
+                           ORIGINAL BATCH               4          CURRENCY CODE                 XOF(952)                            
+                           ORIGINAL BATCH ITEM         52          SOURCE AMOUNT                     1.00                            
+                                                                                                                                     
+ RETURNED REASON           D2  TRANSACTION AMOUNT CONVERSION EQ ZERO                                                                 
+                                                                                                                                     
+      Returned Credit          ----     Required Data                                                                                
+                                                                                                                                     
+ Acct Number & Extension   4514011821859863000                     Merchant State/Prov. Code                                         
+ Floor Limit Indicator                                             Requested Payment Service                                         
+ CRB/Exception File Ind                                            Number of Payment Forms                                           
+ Acquirer Reference Nbr    74637414310101491745485                 Usage Code                1                                       
+ Acquirer's Business ID    00000000                                Chargeback Reason Code    00                                      
+ Purchase Date             20241104                                Settlement Flag           9                                       
+ Destination Amount        000000000000                            Auth Characteristics Ind  N                                       
+ Destination Currency Code                                         Authorization Code        084357                                  
+ Source Amount             000000000100                            POS Terminal Capability   5                                       
+ Source Currency Code      952                                     Cardholder ID Method      1                                       
+ Merchant Name             NOOM HOTEL ABIDJAN PLATE                Collection-Only Flag                                              
+ Merchant City             ABIDJAN                                 POS Entry Mode            05                                      
+ Merchant Country Code     CI                                      Central Processing Date   20241105                                
+ Merchant Category Code    7011                                    Reimbursement Attribute   0                                       
+ Merchant ZIP Code         00000                                                                                                     
+                                                                                                                                     
+      Returned Credit          ----     Additional Data                                                                              
+                                                                                                                                     
+ Business Format Code                                              Conversion Date           00000000                                
+ Token Assurance Method                                            Additional Token Response 0                                       
+ Rate Table ID                                                     Reserved Data             0                                       
+ Reserved                  000000                                  Acceptance Terminal Ind                                           
+ Documentation Indicator                                           Prepaid Card Indicator                                            
+ Member Message Text                                               Service Development Field 0                                       
+ Special Condition Ind                                             AVS Response Code         S                                       
+ Fee Program Indicator                                             Authorization Source Code B                                       
+ Issuer Charge                                                     Purchase Id Format                                                
+ PFX Applied Indicator                                             Account Selection         0                                       
+ Card Acceptor ID          8552086183                              Installment Payment Count                                         
+ Terminal ID               CI132302                                Purchase Identifier                                               
+ Nat'l Reimbursement Fee   000000000000                            Cashback                  000000000                               
+ Mail/Phn/Ecomm & Pymt Ind                                         Chip Condition Code                                               
+ Special Chargeback Ind                                            POS Environment                                                   
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      4
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+      Returned Credit          ----     Payment Service Data                                                                         
+                                                                                                                                     
+ Transaction Identifier    000000000000000                         ECommerce Goods Indicator                                         
+ Authorized Amount         000000000001                            Merchant Verification Val                                         
+ Auth Currency Cd          952                                     Interchange Fee Amount    000000000000000                         
+ Authorization Response Cd 00                                      Interchange Fee Sign                                              
+ Validation Code                                                   Src to Base Curr Ex Rate  0000000                                 
+ Excluded Trans ID Rsn                                             Base to Dest Curr Ex Rate 0000000                                 
+ CRS Processing Code                                               Optional Issuer ISA Amt   000000000000                            
+ Chargeback Rights Ind                                             Product Id                                                        
+ Multiple Clearing Seq Nbr 00                                      Program ID                                                        
+ Multiple Clearing Seq Cnt 00                                      Dynamic Currency Conv Ind                                         
+ Market-Specific Auth Data                                         Acct Type Identification                                          
+ Total Authorized Amount   000000000000                            Spend Qualified Indicator                                         
+ Information Indicator     N                                       PAN Token                 0000000000000000                        
+ Merchant Telephone Number                                         Account Funding Source                                            
+ Additional Data Indicator                                         CVV2 Result Code                                                  
+ Merchant Volume Indicator                                                                                                           
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      5
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+                           ORIGINAL DATE            24310          ORIGINAL TRAN CODE/QUALIFIER      05/0                            
+                           ORIGINAL BATCH               4          CURRENCY CODE                 XOF(952)                            
+                           ORIGINAL BATCH ITEM        105          SOURCE AMOUNT                     1.00                            
+                                                                                                                                     
+ RETURNED REASON           D2  TRANSACTION AMOUNT CONVERSION EQ ZERO                                                                 
+                                                                                                                                     
+      Returned Credit          ----     Required Data                                                                                
+                                                                                                                                     
+ Acct Number & Extension   4633380780148105000                     Merchant State/Prov. Code                                         
+ Floor Limit Indicator                                             Requested Payment Service                                         
+ CRB/Exception File Ind                                            Number of Payment Forms                                           
+ Acquirer Reference Nbr    74637414310101491737078                 Usage Code                1                                       
+ Acquirer's Business ID    00000000                                Chargeback Reason Code    00                                      
+ Purchase Date             20241104                                Settlement Flag           9                                       
+ Destination Amount        000000000000                            Auth Characteristics Ind  N                                       
+ Destination Currency Code                                         Authorization Code        913115                                  
+ Source Amount             000000000100                            POS Terminal Capability   5                                       
+ Source Currency Code      952                                     Cardholder ID Method                                              
+ Merchant Name             HOSPITALITY CAPITAL PART                Collection-Only Flag                                              
+ Merchant City             ABIDJAN                                 POS Entry Mode            05                                      
+ Merchant Country Code     CI                                      Central Processing Date   20241105                                
+ Merchant Category Code    7011                                    Reimbursement Attribute   0                                       
+ Merchant ZIP Code         00000                                                                                                     
+                                                                                                                                     
+      Returned Credit          ----     Additional Data                                                                              
+                                                                                                                                     
+ Business Format Code                                              Conversion Date           00000000                                
+ Token Assurance Method                                            Additional Token Response 0                                       
+ Rate Table ID                                                     Reserved Data             0                                       
+ Reserved                  000000                                  Acceptance Terminal Ind                                           
+ Documentation Indicator                                           Prepaid Card Indicator                                            
+ Member Message Text                                               Service Development Field 0                                       
+ Special Condition Ind                                             AVS Response Code         S                                       
+ Fee Program Indicator                                             Authorization Source Code B                                       
+ Issuer Charge                                                     Purchase Id Format                                                
+ PFX Applied Indicator                                             Account Selection         0                                       
+ Card Acceptor ID          8552085235                              Installment Payment Count                                         
+ Terminal ID               CI124502                                Purchase Identifier                                               
+ Nat'l Reimbursement Fee   000000000000                            Cashback                  000000000                               
+ Mail/Phn/Ecomm & Pymt Ind                                         Chip Condition Code                                               
+ Special Chargeback Ind                                            POS Environment                                                   
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      6
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+      Returned Credit          ----     Payment Service Data                                                                         
+                                                                                                                                     
+ Transaction Identifier    000000000000000                         ECommerce Goods Indicator                                         
+ Authorized Amount         000000000001                            Merchant Verification Val                                         
+ Auth Currency Cd          952                                     Interchange Fee Amount    000000000000000                         
+ Authorization Response Cd 00                                      Interchange Fee Sign                                              
+ Validation Code                                                   Src to Base Curr Ex Rate  0000000                                 
+ Excluded Trans ID Rsn                                             Base to Dest Curr Ex Rate 0000000                                 
+ CRS Processing Code                                               Optional Issuer ISA Amt   000000000000                            
+ Chargeback Rights Ind                                             Product Id                                                        
+ Multiple Clearing Seq Nbr 00                                      Program ID                                                        
+ Multiple Clearing Seq Cnt 00                                      Dynamic Currency Conv Ind                                         
+ Market-Specific Auth Data                                         Acct Type Identification                                          
+ Total Authorized Amount   000000000000                            Spend Qualified Indicator                                         
+ Information Indicator     N                                       PAN Token                 0000000000000000                        
+ Merchant Telephone Number                                         Account Funding Source                                            
+ Additional Data Indicator                                         CVV2 Result Code                                                  
+ Merchant Volume Indicator                                                                                                           
+                                                                                                                                     
+      Returned Credit          ----     Chip Card Transaction Data                                                                   
+                                                                                                                                     
+ Transaction Type          00                                      Iss Appl Data, Byte 3     01                                      
+ Card Sequence Number      000                                     Term Verification Results 0000000000                              
+ Terminal Transaction Date 241104                                  Iss Appl Data, Byte 4-7                                           
+ Terminal Capability Prof. 000000                                  Cryptogram Amount         000000000001                            
+ Terminal Country Code     384                                     Iss Appl Data, Byte 8                                             
+ Terminal Serial Number                                            Iss Appl Data, Byte 9-16                                          
+ Unpredictable Number      00000000                                Iss Appl Data, Byte 1                                             
+ Appl Transaction Counter  0000                                    Iss Appl Data, Byte 17                                            
+ Appl Interchange Profile  0000                                    Iss Appl Data, Byte 18-32                                         
+ Cryptogram                0000000000000000                        Form Factor Indicator                                             
+ Iss Appl Data, Byte 2                                             Issuer Script 1 Results                                           
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      7
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+                           ORIGINAL DATE            24310          ORIGINAL TRAN CODE/QUALIFIER      05/0                            
+                           ORIGINAL BATCH               5          CURRENCY CODE                 XOF(952)                            
+                           ORIGINAL BATCH ITEM         88          SOURCE AMOUNT                     1.00                            
+                                                                                                                                     
+ RETURNED REASON           D2  TRANSACTION AMOUNT CONVERSION EQ ZERO                                                                 
+                                                                                                                                     
+      Returned Credit          ----     Required Data                                                                                
+                                                                                                                                     
+ Acct Number & Extension   4977834228336635000                     Merchant State/Prov. Code                                         
+ Floor Limit Indicator                                             Requested Payment Service                                         
+ CRB/Exception File Ind                                            Number of Payment Forms                                           
+ Acquirer Reference Nbr    74637414310101491700035                 Usage Code                1                                       
+ Acquirer's Business ID    00000000                                Chargeback Reason Code    00                                      
+ Purchase Date             20241104                                Settlement Flag           9                                       
+ Destination Amount        000000000000                            Auth Characteristics Ind  N                                       
+ Destination Currency Code                                         Authorization Code        536124                                  
+ Source Amount             000000000100                            POS Terminal Capability   5                                       
+ Source Currency Code      952                                     Cardholder ID Method                                              
+ Merchant Name             SOCIDA                                  Collection-Only Flag                                              
+ Merchant City             ABIDJAN                                 POS Entry Mode            05                                      
+ Merchant Country Code     CI                                      Central Processing Date   20241105                                
+ Merchant Category Code    7394                                    Reimbursement Attribute   B                                       
+ Merchant ZIP Code         00000                                                                                                     
+                                                                                                                                     
+      Returned Credit          ----     Additional Data                                                                              
+                                                                                                                                     
+ Business Format Code                                              Conversion Date           00000000                                
+ Token Assurance Method                                            Additional Token Response 0                                       
+ Rate Table ID                                                     Reserved Data             0                                       
+ Reserved                  000000                                  Acceptance Terminal Ind                                           
+ Documentation Indicator                                           Prepaid Card Indicator                                            
+ Member Message Text                                               Service Development Field 0                                       
+ Special Condition Ind                                             AVS Response Code         S                                       
+ Fee Program Indicator                                             Authorization Source Code B                                       
+ Issuer Charge                                                     Purchase Id Format                                                
+ PFX Applied Indicator                                             Account Selection         0                                       
+ Card Acceptor ID          8552087363                              Installment Payment Count                                         
+ Terminal ID               CI038202                                Purchase Identifier                                               
+ Nat'l Reimbursement Fee   000000000000                            Cashback                  000000000                               
+ Mail/Phn/Ecomm & Pymt Ind                                         Chip Condition Code                                               
+ Special Chargeback Ind                                            POS Environment                                                   
+REPORT EP-204A  INCOMING INTERCHANGE                    VISANET EDIT PACKAGE                                             PAGE      8
+ SYSTEM DATE 24/11/06    RELEASE  4.00           BASE II RETURNED ITEM DETAIL REPORT                                   CPD   24/11/06
+ HIGHTECH PAYMENT SYSTEMS                                   A/I ID 463741                                               RUN NO    001
+                                                                                                                                     
+      Returned Credit          ----     Payment Service Data                                                                         
+                                                                                                                                     
+ Transaction Identifier    000000000000000                         ECommerce Goods Indicator                                         
+ Authorized Amount         000000000001                            Merchant Verification Val                                         
+ Auth Currency Cd          952                                     Interchange Fee Amount    000000000000000                         
+ Authorization Response Cd 00                                      Interchange Fee Sign                                              
+ Validation Code                                                   Src to Base Curr Ex Rate  0000000                                 
+ Excluded Trans ID Rsn                                             Base to Dest Curr Ex Rate 0000000                                 
+ CRS Processing Code                                               Optional Issuer ISA Amt   000000000000                            
+ Chargeback Rights Ind                                             Product Id                                                        
+ Multiple Clearing Seq Nbr 00                                      Program ID                                                        
+ Multiple Clearing Seq Cnt 00                                      Dynamic Currency Conv Ind                                         
+ Market-Specific Auth Data                                         Acct Type Identification                                          
+ Total Authorized Amount   000000000000                            Spend Qualified Indicator                                         
+ Information Indicator     N                                       PAN Token                 0000000000000000                        
+ Merchant Telephone Number                                         Account Funding Source                                            
+ Additional Data Indicator                                         CVV2 Result Code                                                  
+ Merchant Volume Indicator                                                                                                           
+                                                                                                                                     
+      Returned Credit          ----     Chip Card Transaction Data                                                                   
+                                                                                                                                     
+ Transaction Type          00                                      Iss Appl Data, Byte 3     01                                      
+ Card Sequence Number      000                                     Term Verification Results 0000000000                              
+ Terminal Transaction Date 241104                                  Iss Appl Data, Byte 4-7                                           
+ Terminal Capability Prof. 000000                                  Cryptogram Amount         000000000001                            
+ Terminal Country Code     384                                     Iss Appl Data, Byte 8                                             
+ Terminal Serial Number                                            Iss Appl Data, Byte 9-16                                          
+ Unpredictable Number      00000000                                Iss Appl Data, Byte 1                                             
+ Appl Transaction Counter  0000                                    Iss Appl Data, Byte 17                                            
+ Appl Interchange Profile  0000                                    Iss Appl Data, Byte 18-32                                         
+ Cryptogram                0000000000000000                        Form Factor Indicator                                             
+ Iss Appl Data, Byte 2                                             Issuer Script 1 Results                                           
+                                                                                                                                     
+ TOTAL RETURNED ITEMS            4                                                                                                   

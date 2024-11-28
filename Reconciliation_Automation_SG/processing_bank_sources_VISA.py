@@ -1,6 +1,5 @@
 # librairies
 import pandas as pd
-from parser_TT140_MasterCard import *
 import os
 import re
 import tempfile
@@ -9,6 +8,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, numbers
 from openpyxl.worksheet.table import Table, TableStyleInfo
 import streamlit as st
+import datetime
 import io
 import numpy as np
 import zipfile
@@ -848,7 +848,7 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
 
 
 
-def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, filtering_date):
+def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, filtering_date, file_path, content, zip_file_path, zip_reject_path):
 
     result_df, _ = merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df)
     # Lire le fichier des transactions à recycler
@@ -967,20 +967,580 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
         }
 
         # Renommer les colonnes
-        result_df.rename(columns=column_mapping, inplace=True)
+    result_df.rename(columns=column_mapping, inplace=True)
 
-        # Remplacer les colonnes vides avec colonnes par défaut
-        for column in set(new_columns) - set(result_df.columns):
-            result_df[column] = ''
+    # Remplacer les colonnes vides avec colonnes par défaut
+    for column in set(new_columns) - set(result_df.columns):
+        result_df[column] = ''
 
-        # Réordonner les colonnes
-        result_df = result_df[new_columns]
+    # Réordonner les colonnes
+    result_df = result_df[new_columns]
 
-        # Afficher le dataframe résultat
-        return result_df
+    #print(result_df)
+
+    filename = os.path.basename(file_path)
+    bin_number = filename.split('_')[0]  # Extraire BIN des fichiers
+
+
+     # pour ouvrir en cas de présence de dossier
+     # with open(file_path, 'r') as file:
+        #content = file.read()
         
+    cleaned_content = re.sub(
+    r'(ISSUER TRANSACTIONS.*?(?:\*\*\*  END OF VSS-120 REPORT|FINAL SETTLEMENT NET AMOUNT|TOTAL MERCHANDISE CREDIT)|'
+    r'REPORT ID:\s+VSS-130.*?(?:\*\*\*  END OF VSS-130 REPORT)|'
+    r'REPORT ID:\s+VSS-140.*?(?:\*\*\*  END OF VSS-140 REPORT|TOTAL MERCHANDISE CREDIT)|'
+    r'REPORT ID:\s+VSS-115.*?(?:\*\*\*  END OF VSS-115 REPORT)|'
+    r'ACQUIRER TRANSACTIONS\s+PURCHASE\s+DISPUTE FIN.*?TOTAL PURCHASE\s+([\d,]+)|'
+    r'ACQUIRER TRANSACTIONS\s+PURCHASE\s+ DISPUTE RESP FIN.*?TOTAL PURCHASE\s+([\d,]+))', 
+    '', 
+    content, 
+    flags=re.DOTALL
+)
+
+    # Chercher la section d'extraction commençant de "ACQUIRER TRANSACTIONS" jusqu'à "END OF VSS-120 REPORT"
+    acquirer_section = re.search(r'ACQUIRER TRANSACTIONS(.*)(?=\*\*\*  END OF VSS-120 REPORT)', cleaned_content, re.DOTALL)
+
+    if acquirer_section:
+        acquirer_content = acquirer_section.group(1).strip()  # Extraire et nettoyer le contenu du bloc
+
+        # Extraire le nombre de transactions TOTAL ORIGINAL SALE
+        total_original_sale = re.search(r'TOTAL PURCHASE\s+([\d,]+)', acquirer_content)
+        if total_original_sale:
+            transaction_count = total_original_sale.group(1).replace(',', '')
+        else:
+            transaction_count = None
+
+        # Extraire le nombre de transactions MANUAL CASH (CASH ADVANCE)
+        manual_cash_strict = re.search(r'^\s*MANUAL CASH\s+(\d+)', acquirer_content, re.MULTILINE)
+
+        total_purchase_mga = re.search(r'CLEARING CURRENCY:\s+MGA.*?TOTAL PURCHASE\s+([\d,]+)', acquirer_content, re.DOTALL)
+
+        # Extract le nombre de transactions TOTAL PURCHASE (ACHAT) pour MGA CLEARING CURRENCY EUR
+        nbr_transaction_eur = re.search(r'CLEARING CURRENCY:\s+EUR.*?ORIGINAL SALE\s+(\d+)', acquirer_content, re.DOTALL)
+        
+        if nbr_transaction_eur:
+            transaction_count_EUR = nbr_transaction_eur.group(1).replace(',', '')
+        else:
+            transaction_count_EUR = None
+
+        if total_purchase_mga:
+            transaction_count_MGA = total_purchase_mga.group(1).replace(',', '')
+        else:
+            transaction_count_MGA = None
+
+        # Extraire le nombre de transactions MERCHANDISE CREDIT (CREDIT VOUCHER)
+        merchandise_credit_section = re.search(r'TOTAL MERCHANDISE CREDIT\s+(\d+)', acquirer_content)
+
+        # Extraire le nombre de rejets
+        total_rejects = re.search(r'ORIGINAL SALE\s+RETURN\s+[A-Z0-9]+\s+(\d+)', acquirer_content)
+        if total_rejects:
+            transaction_rejects_count = total_rejects.group(1) #Prendre les elements de la première position comme élement d'extraction
+        else:
+            transaction_rejects_count = "None"
+        
+        xof_rejects = re.search(r'ORIGINAL SALE\s+RETURN\s+[A-Z0-9]+\s+(\d+)', acquirer_content)
+        if xof_rejects:
+            xof_rejects_count = xof_rejects.group(1) #Prendre les elements de la deuxième position comme élement d'extraction (XOFS)
+        else:
+            xof_rejects_count = "None"
+
+        # Créer un dictionnaire pour stocker les résultats
+        transaction_data = {
+            "file": file_path,
+            "Numero de BIN": bin_number,
+            "Nbr de transactions": transaction_count,
+            "CASH ADVANCE": None,
+            "Nbr de transactions (CLEARING CURR EUR POUR MDG)": None,
+            "CREDIT VOUCHER": None,
+            "total de rejets" : transaction_rejects_count,
+            "total de xof rejetées" : xof_rejects_count
+        }
+
+        # Ajouter le nombre de transactions MANUAL CASH (CASH ADVANCE)
+        if manual_cash_strict:
+            manual_cash_value = manual_cash_strict.group(1)
+            if manual_cash_value != "0":  # Ignorer si MANUAL CASH est 0
+                transaction_data["CASH ADVANCE"] = manual_cash_value
+
+        # Ajouter le nombre de transactions pour TOTAL PURCHASE (CLEARING CURRENCY EUR) seulement si le BIN est 489316
+        if bin_number == "489316":
+            transaction_data["Nbr de transactions (CLEARING CURR EUR POUR MDG)"] = transaction_count_EUR
+            transaction_data["Nbr de transactions"] = transaction_count_MGA
+
+        # Ajouter le nombre de transactions pour TOTAL MERCHANDISE CREDIT (CREDIT VOUCHER) si ça existe
+        if merchandise_credit_section:
+            merchandise_credit_count = merchandise_credit_section.group(1)
+            transaction_data["CREDIT VOUCHER"] = merchandise_credit_count
+
     else:
-        print("The recycled rejected transactions file does not exist at the specified path.")
+        return {"file": file_path, "error": "ACQUIRER TRANSACTIONS section not found."}
+    
+    # appliquer l'extraction sur les fichiers à travers le dossier des rapports de SETTLEMENT
+    transaction_list = []
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        # Lister tous les fichiers dans le ZIP
+        for file_name in zip_ref.namelist():
+            if file_name.endswith('.TXT'):
+                # Extraire le fichier en mémoire
+                with zip_ref.open(file_name) as file:
+                    content = file.read().decode('utf-8')
+                    # Appliquer l'extraction des données sur le fichier
+                    transaction_data = extract_transaction_data(file_name, content)
+                    transaction_list.append(transaction_data)
+        
+    
+    # boucler sur le dictionnaire pour afficher les transactions pour chaque filiale (en se basant sur le BIN)
+    for transaction in transaction_list:
+        print(transaction)
+
+
+    # Initialiser la mapping des FILIALES à BINs
+    visa_banks_bin = {
+        'SG - COTE D IVOIRE': '463741',
+        'SG - BENIN': '404927',
+        'SG - BURKINA FASO': '410282',
+        'SG - CAMEROUN': '439972',
+        'SG - GUINEE EQUATORIALE': '410655',
+        'SG - MADAGASCAR': '489316',
+        'SG - SENEGAL': '441358',
+        'SG - TCHAD': '458250',
+        'SG - CONGO': '464012',
+        'SG - GUINEE CONAKRY': '486059'
+    }
+
+
+    # Créer un dictionnaire à partir de la liste des transactions extraites
+    generated_transactions = {trans['Numero de BIN']: trans for trans in transaction_list if 'error' not in trans}
+
+    # Pre-calculer (faire la somme) les lignes ayant comme TYPES :  ACHAT et CREDIT VOUCHER groupées par filiale
+    grouped_filiale = result_df.groupby('FILIALE').agg(
+        achat_transactions=pd.NamedAgg(column='NbreTotaleDeTransactions', aggfunc=lambda x: x[result_df['Type'] == 'ACHAT'].sum()),
+        cv_transactions=pd.NamedAgg(column='NbreTotaleDeTransactions', aggfunc=lambda x: x[result_df['Type'].isna() | (result_df['Type'] == '')].sum())
+    ).reset_index()
+
+    def safe_float(value):
+        """Convert a value to float, handling 'None' and NoneType."""
+        if value in (None, 'None'):
+            return 0
+        try:
+            return float(value)
+        except ValueError:
+            return 0  # Default 0 is la conversion est failed
+
+    def compare_transactions(row, transaction_data, grouped_data):
+        filiale = row['FILIALE']
+        transaction_type = row['Type']
+
+          
+        # Trouver le BIN correspondant par FILIALE
+        bin_number = visa_banks_bin.get(filiale)
+        if not bin_number:
+            return 'Aucun BIN trouvé'
+        
+        # Extraire les donnèes de transactions par BIN
+        trans_data = transaction_data.get(bin_number)
+        if not trans_data:
+            return 'Aucune donnèe pour BIN'
+        
+        # Extraire les informations de transactions du dictionnaire
+        transaction_count = safe_float(trans_data.get('Nbr de transactions'))
+        total_count = safe_float(trans_data.get('Nbr de transactions (CLEARING CURR EUR POUR MDG)'))
+        manual_cash = safe_float(trans_data.get('CASH ADVANCE'))
+        merchandise_credit = safe_float(trans_data.get('CREDIT VOUCHER'))
+        rejects = safe_float(trans_data.get('total de rejets'))
+        #xof_rejects = safe_float(trans_data.get('total de xof rejetées'))
+
+        # Get sommes pré-calculées à travers les donnèes groupées
+        filiale_data = grouped_data[grouped_data['FILIALE'] == filiale]
+        if filiale_data.empty:
+            return 'Filiale inconnue'
+
+        achat_transactions = safe_float(filiale_data['achat_transactions'].values[0])
+        cv_transactions = safe_float(filiale_data['cv_transactions'].values[0])
+
+        #print(f"FILIALE: {filiale}")
+        #print(f"ACHAT transactions (FILIALE): {achat_transactions}")
+        #print(f"CREDIT VOUCHER transactions (FILIALE): {cv_transactions}")
+        #print(f"Transaction count from settlement report: {transaction_count}")
+        #print(f"Rejects from settlement report: {rejects}")
+        #print(f"MERCHANDISE CREDIT from settlement report: {merchandise_credit}")
+
+        #Le cas ou on a pas de rejets
+        if rejects == 0:
+            if transaction_type == 'ACHAT':
+                filiale = row['FILIALE']
+
+                # Checker si on a CREDIT VOUCHER (vide/NaN 'Type') pour la meme FILIALE
+                cv_rows = result_df[(result_df['FILIALE'] == filiale) & (pd.isna(result_df['Type']) | (result_df['Type'] == ''))]
+
+                # If no CREDIT VOUCHER exists for this FILIALE, apply additional checks
+                if cv_rows.empty:
+                
+                    # Apply checks on transaction counts
+                    if row['NbreTotaleDeTransactions'] == transaction_count + merchandise_credit or row['NbreTotaleDeTransactions'] == total_count:
+                    
+                        return 'ok'
+                    else:
+                    
+                        return 'not ok (avec tr.(s) rejetée(s) a extraire)'
+
+                else:
+    
+                    if row['NbreTotaleDeTransactions'] == transaction_count or row['NbreTotaleDeTransactions'] == total_count:
+                    
+                        return 'ok'
+                    else:
+                    
+                        return 'not ok (avec tr.(s) rejetée(s) a extraire)'
+                
+                
+            if transaction_type == 'ACHAT' and transaction_type == '' or  pd.isna(transaction_type):
+
+                # grouper les lignes par filiale
+                filiale = row['FILIALE']
+
+                # lignes avec meme filiale pour ACHAT et CREDIT VOUCHER
+                relevant_rows = result_df[(result_df['FILIALE'] == filiale) &
+                                    ((result_df['Type'] == 'ACHAT') | pd.isna(result_df['Type']) | (result_df['Type'] == ''))]
+                
+
+                # Sommer 'NbreTotaleDeTransactions' pour les lignes
+                total_transactions = relevant_rows['NbreTotaleDeTransactions'].sum()
+
+                # formule de comparaison
+                formule = total_transactions == transaction_count + merchandise_credit
+                if formule:
+                    return 'ok'
+                else:
+                    #print(total_transactions)
+                    #print(transaction_count + merchandise_credit)
+                    return 'not ok (avec tr.(s) rejetée(s) a extraire)'
+                
+            elif transaction_type == 'CASH ADVANCE':
+                if row['NbreTotaleDeTransactions'] == manual_cash:
+                    return 'ok'
+                else:
+                    return 'not ok (avec tr.(s) rejetée(s) a extraire)'
+            
+        # Le cas ou on a des rejets
+        elif rejects != 0:
+            try:
+                formule_calcul = (achat_transactions + cv_transactions) == (transaction_count - rejects + merchandise_credit)
+                print(f"Formule de calcul appliquée ?: {formule_calcul}\n")
+
+                if formule_calcul  and transaction_type == 'ACHAT':
+                    return 'not ok'
+                elif formule_calcul and (transaction_type == '' or  pd.isna(transaction_type)):
+                    return 'ok'
+                elif not formule_calcul and (transaction_type == '' or  pd.isna(transaction_type)): 
+                    return 'ok'
+                elif not formule_calcul and transaction_type == 'ACHAT':
+                    return 'not ok (avec tr.(s) rejetée(s) a extraire)'
+
+            except ValueError:
+                return 'nok'  # Gérer les erreurs de conversion
+
+        else:
+            return 'Type inconnu'
+        
+    def update_rejects(data, transaction_data):
+        for idx, row in data.iterrows():
+            if 'not ok (avec tr.(s) rejetée(s) a extraire)' in row['Rapprochement']:
+                # Remplir uniquement 'Nbre Total de Rejets', laisser 'Montants de rejets' vide
+                filiale = row['FILIALE']
+                bin_number = visa_banks_bin.get(filiale)
+                trans_data = transaction_data.get(bin_number)
+                if trans_data:
+                    data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
+                    data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
+            elif 'not ok' in row['Rapprochement']:
+                # Remplir 'Nbre Total de Rejets' et 'Montants de rejets' les deux
+                filiale = row['FILIALE']
+                bin_number = visa_banks_bin.get(filiale)
+                trans_data = transaction_data.get(bin_number)
+                if trans_data:
+                    data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
+                    data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
+    
+
+        # Fonction pour extraire les rejets des rapports SETTLEMENT de VISA
+    def extract_rejects_data(file_path, content):
+        filename = os.path.basename(file_path)
+        bin_number = filename.split('_')[0]  # Extraire le BIN du nom de fichier
+
+        #with open(file_path, 'r') as file:
+            #content = file.read()
+
+
+        # Nettoyer le contenu pour supprimer les sections non pertinentes
+        cleaned_content = re.sub(
+        r'(ISSUER TRANSACTIONS.*?(?:\*\*\*  END OF VSS-120 REPORT|FINAL SETTLEMENT NET AMOUNT|TOTAL MERCHANDISE CREDIT)|'
+        r'REPORT ID:\s+VSS-130.*?(?:\*\*\*  END OF VSS-130 REPORT)|'
+        r'REPORT ID:\s+VSS-140.*?(?:\*\*\*  END OF VSS-140 REPORT|TOTAL MERCHANDISE CREDIT)|'
+        r'REPORT ID:\s+VSS-115.*?(?:\*\*\*  END OF VSS-115 REPORT)|'
+        r'ACQUIRER TRANSACTIONS\s+PURCHASE\s+DISPUTE FIN.*?TOTAL PURCHASE\s+([\d,]+)|'
+        r'ACQUIRER TRANSACTIONS\s+PURCHASE\s+ DISPUTE RESP FIN.*?TOTAL PURCHASE\s+([\d,]+))', 
+        '', 
+        content, 
+        flags=re.DOTALL
+    )
+        
+        # Chercher la section d'extraction commençant de "ACQUIRER TRANSACTIONS" jusqu'à "END OF VSS-120 REPORT"
+        acquirer_section = re.search(r'ACQUIRER TRANSACTIONS(.*)(?=\*\*\*  END OF VSS-120 REPORT)', cleaned_content, re.DOTALL)
+
+        if acquirer_section:
+            acquirer_content = acquirer_section.group(1).strip()  # Extraire et nettoyer le contenu du bloc
+
+            # Extraire le nombre de rejets
+            total_rejects = re.search(r'ORIGINAL SALE\s+RETURN\s+[A-Z0-9]+\s+(\d+)', acquirer_content)
+            if total_rejects:
+                transaction_rejects_count = total_rejects.group(1)  # Prendre les éléments de la première position comme élément d'extraction
+            else:
+                transaction_rejects_count = "None"
+            
+            # Extraire le nombre de rejets xof
+            xof_rejects = re.search(r'ORIGINAL SALE\s+RETURN\s+[A-Z0-9]+\s+(\d+)', acquirer_content)
+            if xof_rejects:
+                xof_rejects_count = xof_rejects.group(1)  # Prendre les éléments de la deuxième position comme élément d'extraction (XOFS)
+            else:
+                xof_rejects_count = "None"
+
+            # Créer un dictionnaire pour stocker les résultats des rejets
+            rejects_data = {
+                "file": file_path,
+                "Numero de BIN": bin_number,
+                "total de rejets": transaction_rejects_count,
+                "total de xof rejetées": xof_rejects_count
+            }
+
+            return rejects_data
+        else:
+            return {"file": file_path, "error": "ACQUIRER TRANSACTIONS section not found."}
+
+    # Appliquer l'extraction sur les fichiers à travers le dossier des rapports de SETTLEMENT
+    rejects_list = []
+
+    #for filename in os.listdir(visa_file_path):
+        #if filename.endswith('.TXT'):
+            #file_path = os.path.join(visa_file_path, filename)
+            #rejects_data = extract_rejects_data(file_path)
+            #rejects_list.append(rejects_data)
+
+    # Ouvrir le fichier ZIP et extraire son contenu
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        # Lister tous les fichiers dans le ZIP
+        for file_name in zip_ref.namelist():
+            if file_name.endswith('.TXT'):
+                # Extraire le fichier en mémoire
+                with zip_ref.open(file_name) as file:
+                    content = file.read().decode('utf-8')
+                    # Appliquer l'extraction des données de rejets sur le fichier
+                    reject_data = extract_rejects_data(file_name, content)
+                    rejects_list.append(reject_data)
+    
+    # Convertir `rejects_list` en un dictionnaire
+    rejects_data_dict_EP100 = {}
+    for entry in rejects_list:
+        bin_number = entry['Numero de BIN']
+        total_rejects = int(entry['total de rejets']) if entry['total de rejets'] != 'None' else 0
+        total_xof_rejects = int(entry['total de xof rejetées']) if entry['total de xof rejetées'] != 'None' else 0
+        rejects_data_dict_EP100[bin_number] = {
+            'Total Rejects': total_rejects, # Nombre de rejets
+            'Total Amount': total_xof_rejects  # XOFS rejetées
+        }
+    
+
+        # Fonction pour extraire les rejets VISA OUTGOING (EP100)
+    def extract_EP_rejects(file_path, content):
+        filename = os.path.basename(file_path)
+        bin_number = filename.split('_')[0]  # Extraire le BIN du nom de fichier
+
+        filiale_name = next((name for name, bin_code in visa_banks_bin.items() if bin_code == bin_number), None)
+
+
+        # Chercher toutes les sections RECORD dans les fichiers EP100
+        record_sections = re.findall(
+            r'\s*RECORD\s+----\+----1----\+----2----\+----3----\+----4----\+----5----\+----6----\+----7----\+----8----\+----9----\+---10\s+.*?\s+.*?(.*?)(?=\s*RECORD\s+|$)', 
+            content, re.DOTALL
+        )
+
+        # Variables pour stocker les ARN et les montants extraits
+        arn_list = []
+        amount_list = []
+        #motif_list = []
+        authorization_list = []  # Liste pour stocker les autorisation
+        transaction_dates_list = []  # Liste pour stocker les dates de transactions
+
+        
+        for section in record_sections:
+            # Extraire les ARN de 23 chiffres
+            arns = re.findall(r'\d{23}', section)
+            amounts = re.findall(r'\d{10}', section)
+
+            # Extraire le numero d'autorisation du fichier EP100A
+            authorizations = re.findall(r'1009(D|NO|N)(\S{6})', section)  # Extraire D ou NO ou N suivis par les 6 caracteres
+
+
+            t_dates = re.findall(r'05070000(0|1)(\d{6})', section)  # trouver la date apres l'expression 05070000 avec 0 ou 1
+
+            # Liste des codes d'autorisations
+            authorization_codes = [auth[1] for auth in authorizations]  # auth[1] is the 7-digit number
+
+            transaction_dates = []
+
+            for t_date in t_dates:
+                raw_date = t_date[1]  # Extraire la date
+                try:
+                    # Format de date extraire YYMMDD => nouveau format DD/MM/YYYY
+                    formatted_date = datetime.strptime(raw_date, "%y%m%d").strftime("%d/%m/%Y")
+                    transaction_dates.append(formatted_date)
+                except ValueError:
+                    # Si l'extraction est invalide gérer son cas
+                    transaction_dates.append('')
+
+            
+            authorization_list.extend(authorization_codes)
+
+            transaction_dates_list.extend(transaction_dates)
+
+            motifs = []
+            combined_motifs = []
+
+            # On utilise ce bout de code pour utiliser le contenu de fichier en cas de ZIP
+            lines = content.splitlines()  # Spliter le contenu par lignes
+
+            for i, line in enumerate(lines):
+                # Detecter le motif dans la ligne actuelle
+                if re.match(r'^\s*V\d{4}', line):
+                    motif = line.strip()
+                    
+                    # Checker si la ligne suivante contient la suite du motif
+                    if i + 1 < len(lines) and lines[i + 1].strip():
+                        motif += " " + lines[i + 1].strip()  # Ajouter la ligne suivante au motif
+                    
+                    
+                    motif = re.sub(r'\s+', ' ', motif)  # Remplacer les espaces multiples par un unique espace
+                    motifs.append(motif)
+
+            # Vérifier si on a un ARN à la deuxième position et un montant à la septième position (si présents)
+            if len(arns) > 1:
+                arn_list.append(arns[1])
+            if len(amounts) > 6:
+                amount_list.append(float(amounts[6]))  # Convertir en float pour calcul précis
+            combined_motifs = list(motifs)
+        
+        # Nombre total de rejets basé sur les ARN
+        total_rejects = len(arn_list)
+
+        # Somme totale des montants rejetés
+        total_amount = sum(amount_list) if amount_list else 0
+
+        
+
+        # Créer un dictionnaire pour stocker les résultats
+        rejects_data = {
+            "Filiale": filiale_name,
+            #"file": file_path,
+            "BIN": bin_number,
+            "ARNs": arn_list,
+            "Authorization Codes": authorization_list,
+            "Transaction dates": transaction_dates_list,
+            "Amounts": amount_list,
+            "Motifs": combined_motifs,
+            "Total Rejects":  total_rejects,  # Somme des rejets totale
+            "Total Amount": total_amount # Montant total
+        } if arn_list and amount_list else {
+            "file": file_path,
+            "BIN": bin_number,
+            "warning": "No rejected transactions found."
+        }
+        
+        return rejects_data
+
+    # Appliquer l'extraction sur chaque fichier
+    #rejects_list = []
+    #for filename in os.listdir(visa_rejects_file):
+        #if filename.endswith('.TXT'):
+            #file_path = os.path.join(visa_rejects_file, filename)
+            #rejects_data = extract_EP_rejects(file_path)
+            #rejects_list.append(rejects_data)
+    with zipfile.ZipFile(zip_reject_path, 'r') as zip_ref:
+        # Lister tous les fichiers dans le ZIP
+        for file_name in zip_ref.namelist():
+            if file_name.endswith('.TXT'):
+                # Extraire le fichier en mémoire
+                with zip_ref.open(file_name) as file:
+                    content = file.read().decode('utf-8')  # Décoder le contenu en UTF-8
+                    # Appliquer l'extraction des données de rejet EP sur le fichier
+                    rejects_data = extract_EP_rejects(file_name, content)  # Appeler la fonction d'extraction
+                    rejects_list.append(rejects_data)
+    
+
+
+
+    rejects_data_dict = {reject["BIN"]: reject for reject in rejects_list if "Total Rejects" in reject}
+
+    # Fonction pour mettre à jour le nombre total de rejets et le montant de rejets
+    def update_rejects_EP100(data, transaction_data, rejects_data_dict):
+        for idx, row in data.iterrows():
+            filiale = row['FILIALE']
+            bin_number = visa_banks_bin.get(filiale)
+
+            # Check if Rapprochement is a string before using 'in'
+            rapprochement_status = str(row['Rapprochement']) if not pd.isna(row['Rapprochement']) else ""
+
+            # Vérifier si le numéro de BIN existe dans rejects_data_dict pour les rejets
+            if bin_number and bin_number in rejects_data_dict:
+                rej_data = rejects_data_dict[bin_number]
+                rej_data_100 = rejects_data_dict_EP100[bin_number]
+                if 'not ok (avec tr.(s) rejetée(s) a extraire)' in rapprochement_status:
+                    # Remplir 'Nbre Total de Rejets' et 'Montants de rejets' les deux
+                    data.at[idx, 'Nbre Total de Rejets'] = int(rej_data.get('Total Rejects', 0)) + int(rej_data_100.get('Total Rejects', 0))
+                    data.at[idx, 'Montant de Rejets'] = rej_data.get('Total Amount', 0) + rej_data_100.get('Total Amount', 0)
+                    
+                    
+            data['NbreTotaleDeTransactions'] = pd.to_numeric(data['NbreTotaleDeTransactions'], errors='coerce').fillna(0).astype(int)
+            data['Nbre Total de Rejets'] = pd.to_numeric(data['Nbre Total de Rejets'], errors='coerce').fillna(0).astype(int)
+
+            data['Montant Total de Transactions'] = pd.to_numeric(data['Montant Total de Transactions'], errors='coerce').fillna(0)
+            data['Montant de Rejets'] = pd.to_numeric(data['Montant de Rejets'], errors='coerce').fillna(0)
+
+            # Calculer le nombre de transactions couverts
+            data['Nbre de Transactions (Couverture)'] = data.apply(
+                lambda row: row['NbreTotaleDeTransactions'] - row['Nbre Total de Rejets'],
+                axis=1
+            )
+
+            data['Montant de Transactions (Couverture)'] = data.apply(
+                    lambda row: row['Montant Total de Transactions'] - row['Montant de Rejets'],
+                    axis=1
+                )
+        
+
+    # Afficher les transactions rejetées pour chaque filiale, en se basant sur le BIN
+    for reject in rejects_list:
+        print(reject)
+
+
+
+    result_df['Rapprochement'] = result_df.apply(compare_transactions, args=(generated_transactions, grouped_filiale), axis=1)
+        
+    update_rejects(result_df, generated_transactions)
+
+    update_rejects_EP100(result_df, transaction_data, rejects_data_dict)
+
+    # maj des rejets EP100A
+    #update_rejects_EP100(data, transaction_data, rejects_data_dict)
+      
+        
+    # Afficher les résultats
+    print("reeesult")
+    #print(result_df)
+    result_df.to_csv("./Reconciliation_Automation_SG/test.csv")
+
+
+    return result_df
 
 
 # Initialiser la mapping des FILIALES à BINs
