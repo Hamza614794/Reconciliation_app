@@ -10,7 +10,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, numbers
 from openpyxl.worksheet.table import Table, TableStyleInfo
 import streamlit as st
 import io
-import locale
+import numpy as np
 
 # Define the function to read CSV files with delimiters
 def read_csv_with_delimiters(file_path, default_columns=None, default_delimiter=','):

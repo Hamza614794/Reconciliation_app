@@ -74,7 +74,6 @@ def pie_chart():
 
 
 
-
 def handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df):
     try:
         # Initialize session state variables
