@@ -213,6 +213,20 @@ def standardize_date_format(date_column, desired_format='%Y-%m-%d'):
     return date_column
 
 def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, file_path, content, zip_file_path, zip_reject_path):
+
+    # Ensure 'TYPE_TRANSACTION' column exists in each DataFrame, if not, create it with default empty values
+    if 'TYPE_TRANSACTION' not in filtered_cybersource_df.columns:
+        filtered_cybersource_df['TYPE_TRANSACTION'] = ''
+    
+    if 'TYPE_TRANSACTION' not in filtered_saisie_manuelle_df.columns:
+        filtered_saisie_manuelle_df['TYPE_TRANSACTION'] = ''
+    
+    if 'TYPE_TRANSACTION' not in filtered_pos_df.columns:
+        filtered_pos_df['TYPE_TRANSACTION'] = ''
+
+    # Filter cybersource_df to include only rows with TYPE_TRANSACTION == 'ACHAT'
+    filtered_cybersource_df = filtered_cybersource_df[filtered_cybersource_df['TYPE_TRANSACTION'] == 'ACHAT']
+
     # Fusionner avec le dataframe POS avec le dataframe SAISIE MANUELLE en se basant sur les colonnes précisées
     result_df = pd.merge(
         filtered_pos_df,
@@ -1976,6 +1990,153 @@ def extract_EP_rejects(file_path, content):
 
     return df
 
+
+
+def blue_style_and_save_to_excel(df):
+    """
+    Styles a DataFrame and saves it to an Excel file with a predefined style.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to be styled and saved.
+
+    Returns:
+    - str: Path to the saved Excel file.
+    """
+    # Define the path for the output Excel file
+    excel_path = './styled_data.xlsx'
+
+    # Save DataFrame to an Excel file
+    df.to_excel(excel_path, index=False)
+
+    # Load the workbook and select the active worksheet
+    workbook = openpyxl.load_workbook(excel_path)
+    sheet = workbook.active
+
+    # Define the table style
+    style = TableStyleInfo(
+        name="TableStyleMedium9",
+        showFirstColumn=False,
+        showLastColumn=False,
+        showRowStripes=False,
+        showColumnStripes=True
+    )
+
+    # Add the table to the worksheet
+    tab = Table(displayName="Table1", ref=sheet.dimensions)
+    tab.tableStyleInfo = style
+    sheet.add_table(tab)
+    # Define the number format for thousands and decimal separators
+    number_format = numbers.FORMAT_NUMBER_COMMA_SEPARATED1
+
+    # Apply additional styling
+    # Set column widths based on content length and apply number format
+    for col in sheet.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+            # Apply number format to columns containing 'Montant'
+            if 'Montant' in df.columns[col[0].column - 1]:
+                cell.number_format = number_format
+        adjusted_width = (max_length + 2)
+        sheet.column_dimensions[column].width = adjusted_width
+
+    # Set the header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="4F81BD")
+    for cell in sheet[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Save the styled workbook
+    workbook.save(excel_path)
+
+    return excel_path
+
+def styling_and_saving_reconciliated(excel_path):
+    """
+    Styles specific cells in an existing Excel file based on 'Rapprochement' column values.
+
+    Parameters:
+    - excel_path (str): Path to the Excel file to be styled.
+
+    Returns:
+    - str: Path to the styled Excel file.
+    """
+    # Reopen the workbook with openpyxl to apply styles
+    workbook = openpyxl.load_workbook(excel_path)
+    sheet = workbook['Sheet1']
+
+    # Load DataFrame from the Excel file
+    df = pd.read_excel(excel_path, sheet_name='Sheet1')
+
+    # Apply styles to specific cells
+    for row_idx, row in df.iterrows():
+        for col_idx in range(len(row)):
+            cell = sheet.cell(row=row_idx + 2, column=col_idx + 1)  # +2 to account for header and 1-based index
+            # Apply bold font to 'Rapprochement' column cells
+            if col_idx == row.index.get_loc('Rapprochement'):
+                cell.font = Font(bold=True)
+            # Apply red background for 'not ok' and white text color
+            if row['Rapprochement'] == 'not ok':
+                cell.fill = PatternFill(start_color='ffe26b0a', end_color='ffe26b0a', fill_type="solid")  # Red
+                cell.font = Font(bold=True ,color="FFFFFF")  # Set text color to white
+
+    # Save the styled workbook
+    workbook.save(excel_path)
+    return excel_path
+
+
+def highlight_non_reconciliated_row(row):
+    return [f'background-color: #ffab77; font-weight: bold;'
+            if row['Rapprochement'] == 'NOT OK' and row['Type'] == 'ACHAT' and row['Devise'] != 'EUR'  else '' for _ in row]
+
+def download_file(recon  , df, file_partial_name, button_label , run_date):
+    # Assuming styling_and_saving_reconciliated is a defined function that processes the DataFrame
+    excel_path1 = blue_style_and_save_to_excel(df)
+
+    if recon :
+        excel_path2 = styling_and_saving_reconciliated(excel_path1)
+    else:
+        excel_path2 = excel_path1
+
+    with open(excel_path2, 'rb') as f:
+        excel_data = io.BytesIO(f.read())
+
+
+    with open(excel_path2, 'rb') as f:
+        excel_data = io.BytesIO(f.read())
+
+    # Define the file name
+    file_name = f"{file_partial_name}.xlsx"
+
+    # Create a download button for the Excel file
+    st.download_button(
+        label=button_label,
+        data=excel_data,
+        file_name=file_name,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        type="primary",
+        use_container_width=True
+    )
+    return excel_path2 , file_name
+    
+import tempfile
+def save_excel_locally(excel_path , file_name):
+    wb = openpyxl.load_workbook(excel_path)
+
+    # Save the workbook locally with original file name
+    temp_dir = tempfile.gettempdir()  # Get the temporary directory
+    file_path = os.path.join(temp_dir, file_name)  # Define the file path
+
+    wb.save(file_path)  # Save the workbook
+
+    return file_path  # Return the file path
 
 
 
