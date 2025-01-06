@@ -1,0 +1,50 @@
+BANQUE                                  ,RESEAU                                  ,TYPE_TRANSACTION,DATE_TRAI,CUR,NBRE_TRANSACTION,MONTANT_TOTAL
+SG - BENIN                              ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,               8,      6562923
+SG - BENIN                              ,GIM SWITCH                              ,ACHAT           ,01-DEC-24,XOF,             137,      7611627
+SG - BENIN                              ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XOF,              80,      9536777
+SG - BENIN                              ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,             185,     22083655
+SG - BURKINA FASO                       ,GIM SWITCH                              ,ACHAT           ,01-DEC-24,XOF,              28,      1953850
+SG - BURKINA FASO                       ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XOF,               8,      5500900
+SG - BURKINA FASO                       ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,              28,      3361179
+SG - CAMEROUN                           ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XAF,              25,      4065659
+SG - CAMEROUN                           ,China Union Pay                         ,ACHAT           ,01-DEC-24,XAF,               3,        98750
+SG - CAMEROUN                           ,GIMAC SWITCH                            ,ACHAT           ,01-DEC-24,XAF,             569,     45753928
+SG - CAMEROUN                           ,MASTERCARD INTERNATIONAL                ,ACHAT_MDS       ,01-DEC-24,XAF,               1,        64704
+SG - CAMEROUN                           ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XAF,             199,     15336402
+SG - CAMEROUN                           ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XAF,             493,     36214834
+SG - CONGO                              ,GIMAC SWITCH                            ,ACHAT           ,01-DEC-24,XAF,              27,      2626265
+SG - CONGO                              ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XAF,              57,      3332863
+SG - COTE D IVOIRE                      ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,              44,     10303404
+SG - COTE D IVOIRE                      ,China Union Pay                         ,ACHAT           ,01-DEC-24,XOF,               1,       254700
+SG - COTE D IVOIRE                      ,GIM SWITCH                              ,ACHAT           ,01-DEC-24,XOF,            1882,    192761215
+SG - COTE D IVOIRE                      ,GIM SWITCH                              ,                ,01-DEC-24,XOF,               1,       300600
+SG - COTE D IVOIRE                      ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XOF,             446,     68489842
+SG - COTE D IVOIRE                      ,MASTERCARD INTERNATIONAL                ,ACHAT_MDS       ,01-DEC-24,XOF,               1,         7000
+SG - COTE D IVOIRE                      ,VISA INTERNATIONAL                      ,                ,01-DEC-24,XOF,               1,      1460000
+SG - COTE D IVOIRE                      ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,            1037,    129347184
+SG - GUINEE CONAKRY                     ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,GNF,               4,      8892050
+SG - GUINEE CONAKRY                     ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,GNF,              55,     53024245
+SG - GUINEE CONAKRY                     ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,GNF,             249,    222401380
+SG - GUINEE CONAKRY                     ,VISA INTERNATIONAL                      ,CASH ADVANCE    ,01-DEC-24,GNF,               1,      1500000
+SG - GUINEE EQUATORIALE                 ,GIMAC SWITCH                            ,ACHAT           ,01-DEC-24,XAF,               4,       455100
+SG - GUINEE EQUATORIALE                 ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XAF,              21,      1049376
+SG - GUINEE EQUATORIALE                 ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XAF,              47,      5696303
+SG - MADAGASCAR                         ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,MGA,              21,     33313358
+SG - MADAGASCAR                         ,China Union Pay                         ,ACHAT           ,01-DEC-24,MGA,              12,      3863894
+SG - MADAGASCAR                         ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,MGA,             449,    140304900
+SG - MADAGASCAR                         ,MASTERCARD INTERNATIONAL                ,ACHAT_MDS       ,01-DEC-24,MGA,               1,       135000
+SG - MADAGASCAR                         ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,EUR,              42,      5091.96
+SG - MADAGASCAR                         ,MASTERCARD INTERNATIONAL                ,CASH ADVANCE    ,01-DEC-24,MGA,               3,     18000000
+SG - MADAGASCAR                         ,VISA INTERNATIONAL                      ,CASH ADVANCE    ,01-DEC-24,MGA,               5,     21730000
+SG - MADAGASCAR                         ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,MGA,            2379,    714968012
+SG - MADAGASCAR                         ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,EUR,              84,      2661.15
+SG - SENEGAL                            ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,              55,     18790586
+SG - SENEGAL                            ,China Union Pay                         ,ACHAT           ,01-DEC-24,XOF,               1,        43890
+SG - SENEGAL                            ,GIM SWITCH                              ,ACHAT           ,01-DEC-24,XOF,             670,     65641623
+SG - SENEGAL                            ,MASTERCARD INTERNATIONAL                ,ACHAT_MDS       ,01-DEC-24,XOF,               1,       366600
+SG - SENEGAL                            ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XOF,             289,     37488842
+SG - SENEGAL                            ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XOF,             538,     59434307
+SG - TCHAD                              ,AMEX INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XAF,               1,      1158000
+SG - TCHAD                              ,GIMAC SWITCH                            ,ACHAT           ,01-DEC-24,XAF,               3,        77300
+SG - TCHAD                              ,MASTERCARD INTERNATIONAL                ,ACHAT           ,01-DEC-24,XAF,               2,        55000
+SG - TCHAD                              ,VISA INTERNATIONAL                      ,ACHAT           ,01-DEC-24,XAF,              21,      5511034

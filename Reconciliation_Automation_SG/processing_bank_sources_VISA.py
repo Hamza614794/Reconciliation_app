@@ -7,8 +7,8 @@ from openpyxl.styles import PatternFill
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, numbers
 from openpyxl.worksheet.table import Table, TableStyleInfo
+from parser_TT140_MasterCard import *
 import streamlit as st
-import datetime
 import io
 import numpy as np
 import zipfile
@@ -249,6 +249,12 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
 
     # Supprimer les lignes dupliquées
     result_df.drop_duplicates(subset=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION', 'DATE_TRAI'], inplace=True)
+
+    total_nbre_transactions = result_df['NBRE_TRANSACTION'].sum()
+
+    result_df = result_df.reset_index(drop=True)
+
+
 
 
     # Définir les colonnes du dataframe du résultat de réconciliation
@@ -499,6 +505,7 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
                         return 'not ok (avec tr.(s) rejetée(s) a extraire)'
                 
                 
+                
             if transaction_type == 'ACHAT' and transaction_type == '' or  pd.isna(transaction_type):
 
                 # grouper les lignes par filiale
@@ -514,8 +521,11 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
 
                 # formule de comparaison
                 formule = total_transactions == transaction_count + merchandise_credit
+                print(f"Formule sans calcul appliquée oui ou non ?: {formule_calcul}\n")
                 if formule:
                     return 'ok'
+
+
                 else:
                     #print(total_transactions)
                     #print(transaction_count + merchandise_credit)
@@ -526,12 +536,14 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
                     return 'ok'
                 else:
                     return 'not ok (avec tr.(s) rejetée(s) a extraire)'
+            else:
+                return 'ok'
             
         # Le cas ou on a des rejets
         elif rejects != 0:
             try:
                 formule_calcul = (achat_transactions + cv_transactions) == (transaction_count - rejects + merchandise_credit)
-                print(f"Formule de calcul appliquée ?: {formule_calcul}\n")
+                print(f"Formule de rejets calcul appliquée oui ou non ?: {formule_calcul}\n")
 
                 if formule_calcul  and transaction_type == 'ACHAT':
                     return 'not ok'
@@ -543,29 +555,35 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
                     return 'not ok (avec tr.(s) rejetée(s) a extraire)'
 
             except ValueError:
-                return 'nok'  # Gérer les erreurs de conversion
+                return 'not ok'  # Gérer les erreurs de conversion
 
         else:
             return 'Type inconnu'
         
     def update_rejects(data, transaction_data):
         for idx, row in data.iterrows():
-            if 'not ok (avec tr.(s) rejetée(s) a extraire)' in row['Rapprochement']:
-                # Remplir uniquement 'Nbre Total de Rejets', laisser 'Montants de rejets' vide
+            # Ensure 'Rapprochement' is not None and is a string
+            rapprochement = row.get('Rapprochement')
+            #if not isinstance(rapprochement, str):
+                #continue
+
+            if 'not ok (avec tr.(s) rejetée(s) a extraire)' in rapprochement:
+                # Fill only 'Nbre Total de Rejets', leave 'Montants de rejets' empty
                 filiale = row['FILIALE']
                 bin_number = visa_banks_bin.get(filiale)
                 trans_data = transaction_data.get(bin_number)
                 if trans_data:
                     data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
                     data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
-            elif 'not ok' in row['Rapprochement']:
-                # Remplir 'Nbre Total de Rejets' et 'Montants de rejets' les deux
+            elif 'not ok' in rapprochement:
+                # Fill both 'Nbre Total de Rejets' and 'Montants de rejets'
                 filiale = row['FILIALE']
                 bin_number = visa_banks_bin.get(filiale)
                 trans_data = transaction_data.get(bin_number)
                 if trans_data:
                     data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
                     data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
+
     
 
         # Fonction pour extraire les rejets des rapports SETTLEMENT de VISA
@@ -844,48 +862,130 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
     result_df.to_csv("./Reconciliation_Automation_SG/test.csv")
 
 
-    return result_df
+    return result_df, total_nbre_transactions
 
+
+
+# Merge the dataframes on relevant common columns
+def no_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df):
+
+    # Ensure 'TYPE_TRANSACTION' column exists in each DataFrame, if not, create it with default empty values
+    if 'TYPE_TRANSACTION' not in filtered_cybersource_df.columns:
+        filtered_cybersource_df['TYPE_TRANSACTION'] = ''
+    
+    if 'TYPE_TRANSACTION' not in filtered_saisie_manuelle_df.columns:
+        filtered_saisie_manuelle_df['TYPE_TRANSACTION'] = ''
+    
+    if 'TYPE_TRANSACTION' not in filtered_pos_df.columns:
+        filtered_pos_df['TYPE_TRANSACTION'] = ''
+
+    # Filter cybersource_df to include only rows with TYPE_TRANSACTION == 'ACHAT'
+    filtered_cybersource_df = filtered_cybersource_df[filtered_cybersource_df['TYPE_TRANSACTION'] == 'ACHAT']
+
+    # Merge POS and Saisie Manuelle dataframes
+    merged_df = pd.merge(
+        filtered_pos_df,
+        filtered_saisie_manuelle_df,
+        on=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION'],
+        suffixes=('_pos', '_saisie'),
+        how='outer'  # Use outer join to keep all rows from both dataframes
+    )
+
+    # Merge with filtered_cybersource_df
+    merged_df = pd.merge(
+        merged_df,
+        filtered_cybersource_df,
+        on=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION'],
+        suffixes=('_merged', '_cybersource'),
+        how='outer'  # Use outer join to keep all rows from all dataframes
+    )
+
+    # Fill missing values with 0 and sum the 'NBRE_TRANSACTION' values
+    merged_df['NBRE_TRANSACTION'] = (merged_df['NBRE_TRANSACTION_pos'].fillna(0) +
+                                     merged_df['NBRE_TRANSACTION_saisie'].fillna(0) +
+                                     merged_df['NBRE_TRANSACTION'].fillna(0))
+    
+    merged_df['NBRE_TRANSACTION'] = merged_df['NBRE_TRANSACTION'].astype(int)
+
+    # Convert 'NBRE_TRANSACTION' to integer
+    merged_df['MONTANT_TOTAL'] = (
+                                    merged_df['MONTANT_TOTAL_pos'].fillna(0) +
+                                    merged_df['MONTANT_TOTAL_saisie'].fillna(0) +
+                                    merged_df['MONTANT_TOTAL'].fillna(0)
+)
+    # Use MONTANT_TOTAL from filtered_pos_df
+    #merged_df['MONTANT_TOTAL'] = merged_df['MONTANT_TOTAL_pos'].fillna(0)
+
+
+    # Use MONTANT_TOTAL from filtered_pos_df
+    #merged_df['MONTANT_TOTAL'] = merged_df['MONTANT_TOTAL_pos'].fillna(0)
+
+    # Drop unnecessary columns
+    merged_df.drop(['NBRE_TRANSACTION_pos', 'NBRE_TRANSACTION_saisie', 'MONTANT_TOTAL_pos', 'MONTANT_TOTAL_saisie'], axis=1, inplace=True)
+
+    # Drop duplicate rows
+    merged_df.drop_duplicates(subset=['FILIALE', 'RESEAU', 'CUR', 'TYPE_TRANSACTION', 'DATE_TRAI'], inplace=True)
+    total_nbre_transactions = merged_df['NBRE_TRANSACTION'].sum()
+
+    merged_df = merged_df.reset_index(drop=True)
+
+    return merged_df , total_nbre_transactions
 
 
 def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, filtering_date, file_path, content, zip_file_path, zip_reject_path):
 
-    result_df, _ = merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df)
+    result_df, _ = no_recycled(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df)
     # Lire le fichier des transactions à recycler
     if os.path.exists(recycled_rejected_file):
         # transformer le fichier xlsx en csv puis en df
-        df_recycled_files = excel_to_csv_to_df(recycled_rejected_file)
+        df_recycled = excel_to_csv_to_df(recycled_rejected_file)
 
         # nettoyer les colonnes
-        df_recycled_files.columns = df_recycled_files.columns.str.strip()
-        df_recycled_files = df_recycled_files.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+        df_recycled.columns = df_recycled.columns.str.strip()
+        df_recycled = df_recycled.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
         #Renommer la colonne BANQUE en colonne FILIALE
-        df_recycled_files.rename(columns={'BANQUE': 'FILIALE'}, inplace=True)
+        df_recycled.rename(columns={'BANQUE': 'FILIALE'}, inplace=True)
         
         # Garder les transactions avec la date retraitement (date de recyclage)
-        df_recycled_files = standardize_date_format(df_recycled_files['Date Retraitement'])
+        #df_recycled = standardize_date_format(df_recycled['Date Retraitement'])
+        print("date filtereeeeeeeeeeeeeeeeed:")
+        print(filtering_date)
+        #print("result",df_recycled)
+        #df_recycled = df_recycled[df_recycled['Date Retraitement'] == filtering_date]
         df_recycled = df_recycled[df_recycled['Date Retraitement'] == filtering_date.strftime('%Y-%m-%d')]
-        df_recycled_files.drop_duplicates(subset=['FILIALE', 'RESEAU', 'ARN', 'Autorisation', 'Date Transaction', 'Montant', 'Devise'], inplace=True)
+        #print("date retraitement", df_recycled[df_recycled['Date Retraitement']])
+        print(df_recycled)
+        #df_recycled['Date Retraitement'] = df_recycled['Date Retraitement'].dt.strftime('%Y-%m-%d')
+        df_recycled.drop_duplicates(subset=['FILIALE', 'RESEAU', 'ARN', 'Autorisation', 'Date Transaction', 'Montant', 'Devise'], inplace=True)
         
         # Normaliser le noms de quelques valeurs de colonnes
-        df_recycled_files['FILIALE'] = df_recycled_files['FILIALE'].str.replace('SG-', 'SG - ')
-        df_recycled_files['FILIALE'] = df_recycled_files['FILIALE'].str.replace("COTE D'IVOIRE", "COTE D IVOIRE")
-        df_recycled_files['RESEAU'] = df_recycled_files['RESEAU'].str.replace("VISA", "VISA INTERNATIONAL")
+        df_recycled['FILIALE'] = df_recycled['FILIALE'].str.replace('SG-', 'SG - ')
+        df_recycled['FILIALE'] = df_recycled['FILIALE'].str.replace("COTE D'IVOIRE", "COTE D IVOIRE")
+        df_recycled['RESEAU'] = df_recycled['RESEAU'].str.replace("VISA", "VISA INTERNATIONAL")
+
+
+        print("result")
+        print(df_recycled)
 
 
         # Grouper par FILIALE et RESEAU et calculer et donner le count et la somme du montant
-        summary = df_recycled_files.groupby(['FILIALE', 'RESEAU']).agg(
+        summary = df_recycled.groupby(['FILIALE', 'RESEAU']).agg(
             NBRE_TRANSACTION=('Montant', 'count'),
             MONTANT_TOTAL=('Montant', 'sum')
         ).reset_index()
 
         # Printer le resumé des rekets
         print("Résumé des Rejets :")
-        print(summary)
+        st.write("### Le rejet à recycler")
+        st.dataframe(summary)
+        
+        print("result_df_columns", result_df.columns)
+        print("recycle columns", df_recycled)
         
         # Fusionner le dataframe des sources fusionnées avec les transactions à recycler
         result_df = result_df.merge(summary, on=['FILIALE', 'RESEAU'], how='left', suffixes=('_merged', '_summary'))
+
         
         # Remplacer les valeurs NaN par 0
         result_df.fillna(0, inplace=True)

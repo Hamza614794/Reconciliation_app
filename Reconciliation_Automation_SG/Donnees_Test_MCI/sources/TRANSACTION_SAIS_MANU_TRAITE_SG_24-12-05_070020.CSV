@@ -1,0 +1,8 @@
+NBRE_TRANSACTION,MONTANT_TOTAL,CUR,FILIALE                                 ,RESEAU
+               4,       692905,XOF,SG - SENEGAL                            ,VISA INTERNATIONAL
+               1,      2520000,GNF,SG - GUINEE CONAKRY                     ,VISA INTERNATIONAL
+               1,     13260000,GNF,SG - GUINEE CONAKRY                     ,MASTERCARD INTERNATIONAL
+               1,       466267,XAF,SG - CAMEROUN                           ,VISA INTERNATIONAL
+               1,        85574,XOF,SG - SENEGAL                            ,MASTERCARD INTERNATIONAL
+               1,        15000,XAF,SG - CAMEROUN                           ,AMEX INTERNATIONAL
+               1,       144000,XOF,SG - SENEGAL                            ,GIM SWITCH

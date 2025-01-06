@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import re
+import streamlit as st
 from datetime import datetime , timedelta
 import locale
 
@@ -241,7 +242,7 @@ def calculate_rejected_summary(mastercard_file_path):
 
     # Print the summary DataFrame
     #print("Rejected Summary DataFrame:")
-    #print(summary)
+    #st.dataframe(summary)
 
     return summary
 

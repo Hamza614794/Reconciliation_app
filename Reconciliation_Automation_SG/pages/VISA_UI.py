@@ -33,6 +33,8 @@ def upload_all_sources():
             VISA_transactions_pos = df_pos[(df_pos['RESEAU'] == 'VISA INTERNATIONAL') &
                                                  (~df_pos['TYPE_TRANSACTION'].str.endswith('_MDS'))]
             total_transactions['POS'] = VISA_transactions_pos['NBRE_TRANSACTION'].sum()
+        else:
+            st.error("error")
     except Exception as e:
         st.error(f"Erreur lors du traitement du fichier POS :{e}")
 
@@ -71,8 +73,6 @@ def pie_chart():
         st.plotly_chart(fig)
 
 
-
-
 def handle_recon(
     filtered_cybersource_df,
     filtered_saisie_manuelle_df,
@@ -84,6 +84,10 @@ def handle_recon(
         # Save the uploaded recycled file
         recycled_file_path = save_uploaded_file(uploaded_recycled_file)
         df_recyc = pd.read_excel(recycled_file_path)
+
+        st.write ("### Les rejets présents dans le fichier ###")
+        st.dataframe(df_recyc)
+        st.write("La date du filtrage : ", filtering_date)
 
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
             # Lister tous les fichiers dans le ZIP
@@ -101,7 +105,7 @@ def handle_recon(
                         #print(transaction_list)
                         print(file_name)
         # Perform merging with recycled data
-        result_df = merging_with_recycled(
+        result_df= merging_with_recycled(
             recycled_file_path,
             filtered_cybersource_df,
             filtered_saisie_manuelle_df,
@@ -130,7 +134,7 @@ def handle_recon(
         
 
         # Handle case without recycled file
-        result_df = merging_sources_without_recycled(
+        result_df, total_nbre_transactions = merging_sources_without_recycled(
             filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, file_name, content, zip_file_path, zip_reject_path
         )
         st.header("Résultats de réconciliation")
@@ -425,8 +429,8 @@ def main():
 
     pie_chart()
     try:
-        if zip_uploaded_visa_EP747 and zip_uploaded_visa_EP100_204:
-            if not ep747_data.empty and not ep100_data.empty:
+        if zip_uploaded_visa_EP747:
+            if not ep747_data.empty:
                 ep747_data = process_zip_and_extract(zip_uploaded_visa_EP747)
                 ep100_data = process_zip_and_extract_EP100(zip_uploaded_visa_EP100_204)
                 handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)

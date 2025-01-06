@@ -1,0 +1,5 @@
+NBRE_TRANSACTION,MONTANT_TOTAL,CUR,FILIALE                                 ,RESEAU
+               1,        25000,XOF,SG - COTE D IVOIRE                      ,GIM SWITCH
+               1,       503500,XOF,SG - COTE D IVOIRE                      ,MASTERCARD INTERNATIONAL
+               2,       700500,XOF,SG - COTE D IVOIRE                      ,AMEX INTERNATIONAL
+               3,       398864,XOF,SG - COTE D IVOIRE                      ,VISA INTERNATIONAL

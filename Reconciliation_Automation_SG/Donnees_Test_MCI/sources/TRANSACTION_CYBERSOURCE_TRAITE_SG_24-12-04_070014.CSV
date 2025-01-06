@@ -1,0 +1,5 @@
+NBRE_TRANSACTION,MONTANT_TOTAL,CUR,FILIALE                                 ,RESEAU
+              10,      1032931,MGA,SG - MADAGASCAR                         ,VISA INTERNATIONAL
+               2,       625670,XAF,SG - CAMEROUN                           ,VISA INTERNATIONAL
+               9,      4434293,XOF,SG - COTE D IVOIRE                      ,VISA INTERNATIONAL
+               1,       401356,MGA,SG - MADAGASCAR                         ,MASTERCARD INTERNATIONAL

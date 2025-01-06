@@ -290,10 +290,14 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
     df_recycled.columns = df_recycled.columns.str.strip()
     df_recycled = df_recycled.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
     df_recycled.rename(columns={'BANQUE': 'FILIALE'}, inplace=True)
-    df_recycled['Date Retraitement'] = standardize_date_format(df_recycled['Date Retraitement'])
+    #df_recycled = standardize_date_format(df_recycled['Date Retraitement'])
+
+    #print("rejets recycléeeeees")
+    #print(df_recycled)
     
     # Filtering recycled data based on the date
     df_recycled = df_recycled[df_recycled['Date Retraitement'] == filtering_date.strftime('%Y-%m-%d')]
+    
     df_recycled.drop_duplicates(subset=['FILIALE', 'RESEAU', 'ARN', 'Autorisation', 'Date Transaction', 'Montant', 'Devise'], inplace=True)
     
     # Normalizing 'FILIALE' values
@@ -407,9 +411,11 @@ def handle_non_match_reconciliation(file_path,merged_df , run_date):
     filiales_with_issues = set(df_rejected_summary['FILIALE'])
 
     # Update the reconciliated DataFrame
-    df_reconciliated['Rapprochement'] = df_reconciliated['FILIALE'].apply(
-        lambda x: 'NOT OK' if x in filiales_with_issues else 'OK'
-    )
+    df_reconciliated['Rapprochement'] = df_reconciliated.apply(
+        lambda row: 'NOT OK' if (row['FILIALE'] in filiales_with_issues and row['Type'] == 'ACHAT') else 'OK',
+        axis=1
+        )
+
 
     # Update Nbre Total de Rejets and Montant de Rejets based on the rejected summary data
     for index, row in df_rejected_summary.iterrows():
@@ -440,14 +446,14 @@ def handle_non_match_reconciliation(file_path,merged_df , run_date):
             # Update 'Montant de Transactions (Couverture)' only for rows where Type is 'ACHAT' and exclude empty Type (CREDIT VOUCHER)
             df_reconciliated['Montant de Transactions (Couverture)'] = df_reconciliated.apply(
                 lambda row: row['Montant Total de Transactions'] - row['Montant de Rejets'] 
-                if row['Type'] == 'ACHAT' else row['Montant Total de Transactions'],
+                if row['Type'] == 'ACHAT' and row['Devise'] != 'EUR' else row['Montant Total de Transactions'],
                 axis=1
             )
 
             # Update 'Nbre de Transactions (Couverture)' only for rows where Type is 'ACHAT' and exclude empty Type (CREDIT VOUCHER)
             df_reconciliated['Nbre de Transactions (Couverture)'] = df_reconciliated.apply(
                 lambda row: row['Nbre Total De Transactions'] - row['Nbre Total de Rejets']
-                if row['Type'] == 'ACHAT' else row['Nbre Total De Transactions'],
+                if row['Type'] == 'ACHAT' and row['Devise'] != 'EUR' else row['Nbre Total De Transactions'],
                 axis=1
             )
 
@@ -564,7 +570,7 @@ def styling_and_saving_reconciliated(excel_path):
 
 def highlight_non_reconciliated_row(row):
     return [f'background-color: #ffab77; font-weight: bold;'
-            if row['Rapprochement'] == 'NOT OK' else '' for _ in row]
+            if row['Rapprochement'] == 'NOT OK' and row['Type'] == 'ACHAT' and row['Devise'] != 'EUR'  else '' for _ in row]
 
 
 df_reconciliated = None
