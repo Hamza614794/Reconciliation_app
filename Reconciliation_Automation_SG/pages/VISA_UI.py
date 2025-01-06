@@ -114,7 +114,20 @@ def handle_recon(
             file_name, content, zip_file_path, zip_reject_path
         )
         st.header("Résultats de réconciliation")
-        st.dataframe(result_df, use_container_width=True)
+        #st.dataframe(result_df, use_container_width=True)
+        #st.dataframe(result_df.style.apply(highlight_non_reconciliated_row, axis=1))
+        def format_amount(x):
+            if isinstance(x, float):
+                return f"{x:.1f}"  # Keeps only 2 decimal places
+            return x  # Return as-is for non-float types
+
+        # Apply the formatting to the relevant columns (replace 'amount_column' with actual column names)
+        formatted_df = result_df.copy()
+        for column in ['Montant Total de Transactions', 'Montant de Rejets', 'Montant de Transactions (Couverture)']:  # Replace with actual amount columns
+            formatted_df[column] = formatted_df[column].apply(format_amount)
+
+        # Apply the styling function and display
+        st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         #return result_df
     else:
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -139,7 +152,20 @@ def handle_recon(
             filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, file_name, content, zip_file_path, zip_reject_path
         )
         st.header("Résultats de réconciliation")
-        st.dataframe(result_df, use_container_width=True)
+        #st.dataframe(result_df, use_container_width=True)
+        #st.dataframe(result_df.style.apply(highlight_non_reconciliated_row, axis=1))
+        def format_amount(x):
+            if isinstance(x, float):
+                return f"{x:.1f}"  # Keeps only 2 decimal places
+            return x  # Return as-is for non-float types
+
+        # Apply the formatting to the relevant columns (replace 'amount_column' with actual column names)
+        formatted_df = result_df.copy()
+        for column in ['Montant Total de Transactions', 'Montant de Rejets', 'Montant de Transactions (Couverture)']:  # Replace with actual amount columns
+            formatted_df[column] = formatted_df[column].apply(format_amount)
+
+        # Apply the styling function and display
+        st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         #return result_df
 
 

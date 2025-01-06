@@ -2094,9 +2094,9 @@ def styling_and_saving_reconciliated(excel_path):
 
 def highlight_non_reconciliated_row(row):
     return [f'background-color: #ffab77; font-weight: bold;'
-            if row['Rapprochement'] == 'NOT OK' and row['Type'] == 'ACHAT' and row['Devise'] != 'EUR'  else '' for _ in row]
+            if row['Rapprochement'] == 'not ok' and row['Type'] == 'ACHAT' and row['Devise'] != 'EUR'  else '' for _ in row]
 
-def download_file(recon  , df, file_partial_name, button_label , run_date):
+def download_file(recon, df, file_partial_name, button_label , run_date):
     # Assuming styling_and_saving_reconciliated is a defined function that processes the DataFrame
     excel_path1 = blue_style_and_save_to_excel(df)
 
