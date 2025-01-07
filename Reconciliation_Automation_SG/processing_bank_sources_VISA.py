@@ -175,7 +175,7 @@ def excel_to_csv_to_df(excel_file_path, sheet_name=0):
     """
     try:
         # Lire le fichier excel
-        df = pd.read_excel(excel_file_path, sheet_name=sheet_name, header=0)
+        df = pd.read_excel(excel_file_path,engine='openpyxl', sheet_name=sheet_name, header=0)
 
         # Définir le chemin du fichier csv
         csv_file_path = excel_file_path.replace('.xlsx', '.csv')
@@ -991,7 +991,7 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
 
         # Printer le resumé des rekets
         print("Résumé des Rejets :")
-        st.write("### Le rejet à recycler")
+        st.write("### Le(s) rejet(s) à recycler")
         st.dataframe(summary)
         
         print("result_df_columns", result_df.columns)
@@ -2083,7 +2083,7 @@ def styling_and_saving_reconciliated(excel_path):
             if col_idx == row.index.get_loc('Rapprochement'):
                 cell.font = Font(bold=True)
             # Apply red background for 'not ok' and white text color
-            if row['Rapprochement'] == 'not ok':
+            if row['Rapprochement'] == 'not ok' or row['Rapprochement'] == 'not ok (avec tr.(s) rejetée(s) a extraire)':
                 cell.fill = PatternFill(start_color='ffe26b0a', end_color='ffe26b0a', fill_type="solid")  # Red
                 cell.font = Font(bold=True ,color="FFFFFF")  # Set text color to white
 
@@ -2094,7 +2094,7 @@ def styling_and_saving_reconciliated(excel_path):
 
 def highlight_non_reconciliated_row(row):
     return [f'background-color: #ffab77; font-weight: bold;'
-            if row['Rapprochement'] == 'not ok' and row['Type'] == 'ACHAT' and row['Devise'] != 'EUR'  else '' for _ in row]
+            if (row['Rapprochement'] == 'not ok' or row['Rapprochement'] == 'not ok (avec tr.(s) rejetée(s) a extraire)') and row['Type'] == 'ACHAT' and row['Devise'] != 'EUR'  else '' for _ in row]
 
 def download_file(recon, df, file_partial_name, button_label , run_date):
     # Assuming styling_and_saving_reconciliated is a defined function that processes the DataFrame

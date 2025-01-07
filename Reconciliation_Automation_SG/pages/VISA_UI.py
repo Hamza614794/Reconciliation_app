@@ -80,6 +80,7 @@ def handle_recon(
     zip_file_path,
     zip_reject_path
 ):
+    
     if uploaded_recycled_file:
         # Save the uploaded recycled file
         recycled_file_path = save_uploaded_file(uploaded_recycled_file)
@@ -127,8 +128,9 @@ def handle_recon(
             formatted_df[column] = formatted_df[column].apply(format_amount)
 
         # Apply the styling function and display
+        #st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
-        #return result_df
+        return formatted_df
     else:
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
             # Lister tous les fichiers dans le ZIP
@@ -165,7 +167,9 @@ def handle_recon(
             formatted_df[column] = formatted_df[column].apply(format_amount)
 
         # Apply the styling function and display
+        #st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
+        return formatted_df
         #return result_df
 
 
@@ -179,11 +183,7 @@ def result(
     if uploaded_recycled_file:
         # Save the uploaded recycled file
         recycled_file_path = save_uploaded_file(uploaded_recycled_file)
-        df_recyc = pd.read_excel(recycled_file_path)
-
-        st.write ("### Les rejets présents dans le fichier ###")
-        st.dataframe(df_recyc)
-        st.write("La date du filtrage : ", filtering_date)
+        df_recyc = pd.read_excel(recycled_file_path, engine = 'openpyxl')
 
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
             # Lister tous les fichiers dans le ZIP
@@ -278,11 +278,17 @@ def process_zip_and_extract(zip_file, temp_dir="temp_unzipped"):
         cleanup_temp_dir(temp_dir)
     
 
-def process_zip_and_extract_EP100(zip_file, temp_dir="temp_unzipped"):
+def process_zip_and_extract_EP100(zip_file=None, temp_dir="temp_unzipped"):
     """
     Process the uploaded ZIP file, extract all files, and process using `extract_transaction_data`.
+    If the ZIP file is not provided, skip processing and return an empty DataFrame.
     """
     try:
+        # Skip processing if no ZIP file is provided
+        if not zip_file:
+            st.warning("No ZIP file provided. Skipping extraction.")
+            return pd.DataFrame()  # Return an empty DataFrame
+
         # Ensure temp directory exists
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
@@ -292,7 +298,6 @@ def process_zip_and_extract_EP100(zip_file, temp_dir="temp_unzipped"):
             z.extractall(temp_dir)
 
         # Collect extracted data
-        #extracted_data = []
         all_file_data = []
         for root, _, files in os.walk(temp_dir):
             for file in files:
@@ -308,15 +313,13 @@ def process_zip_and_extract_EP100(zip_file, temp_dir="temp_unzipped"):
                 # If file_data is not empty, append it to the list
                 if not file_data.empty:
                     all_file_data.append(file_data)
-                else:
-                    pd.DataFrame()  # Return an empty DataFrame if no data
 
         # Concatenate all DataFrames into one
         if all_file_data:
             combined_file_data = pd.concat(all_file_data, ignore_index=True)
         else:
             combined_file_data = pd.DataFrame()  # Return an empty DataFrame if no data
-                
+
         # Cleanup temp directory
         for root, _, files in os.walk(temp_dir):
             for file in files:
@@ -325,9 +328,11 @@ def process_zip_and_extract_EP100(zip_file, temp_dir="temp_unzipped"):
 
         # Return collected data as a DataFrame
         return combined_file_data
+
     except Exception as e:
         st.error(f"Error while processing the ZIP file: {e}")
         return pd.DataFrame()
+
     
 
 def process_zip_and_extract_EP100_V2(zip_file, temp_dir="temp_unzipped"):
@@ -406,9 +411,6 @@ def process_zip_and_extract_EP747_V2(zip_file, temp_dir="temp_unzipped"):
         st.error(f"Error while processing the ZIP file: {e}")
         return None, None
 
-
-
-
 def main():
     global zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204, uploaded_cybersource_file, uploaded_pos_file, uploaded_sai_manuelle_file, filtering_date, uploaded_recycled_file, total_transactions
     st.sidebar.image("assets/Logo_hps_0.png", use_column_width=True)
@@ -463,12 +465,7 @@ def main():
                 
                 # Allow download of the processed data
                 csv = ep100_data.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="Télécharger les rejets",
-                    data=csv,
-                    file_name="EP100_results.csv",
-                    mime="text/csv",
-                )
+                download_file(recon=False, df=ep100_data, file_partial_name='rejets_VISA', button_label=":arrow_down: Téléchargez les rejets", run_date=0)      
             else:
                 st.warning("Aucune donnée extraite du fichier ZIP.")
         except Exception as e:
@@ -504,8 +501,6 @@ def main():
     default_columns_saisie_manuelle = ['NBRE_TRANSACTION', 'MONTANT_TOTAL', 'CUR', 'FILIALE', 'RESEAU']
     default_columns_pos = ['FILIALE', 'RESEAU', 'TYPE_TRANSACTION', 'DATE_TRAI', 'CUR', 'NBRE_TRANSACTION', 'MONTANT_TOTAL']
 
-   
-
     total_transactions = {'Cybersource': 0, 'POS': 0, 'Saisie Manuelle': 0}
 
     try:
@@ -523,26 +518,22 @@ def main():
 
     pie_chart()
     
+    
     try:
+       
         if st.button('Réconcilier', type="primary", use_container_width=True):
             if zip_uploaded_visa_EP747:
                 if not ep747_data.empty:
                     ep747_data = process_zip_and_extract(zip_uploaded_visa_EP747)
                     ep100_data = process_zip_and_extract_EP100(zip_uploaded_visa_EP100_204)
-                    handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)
-                   
-                
-             
+                    df_result = handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)
+                    #df_result = result(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)
+                    download_file(recon=True, df=df_result, file_partial_name='results_recon_VISA', button_label=":arrow_down: Téléchargez les résultats de réconciliation", run_date=0)      
             else:
-                st.warning("Charger les rapports EP747 / EP 100 et les sources pour continuer")
+                st.warning("Charger les rapports EP 100 et les sources pour continuer")
     except Exception as e:
             st.warning(f"Charger les sources")
-            #st.write(e)
-   
-
-    df_result = result(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)
-    download_file(recon=True, df=df_result, file_partial_name='results_recon_VISA', button_label=":arrow_down: Téléchargez les résultats de réconciliation", run_date=0)      
-    
+            st.write(e)
 
 if __name__ == "__main__":
     main()
