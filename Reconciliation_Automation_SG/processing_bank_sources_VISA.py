@@ -1881,63 +1881,76 @@ def extract_EP_rejects(file_path, content):
     motifs = []
     combined_motifs = []
 
+     # Variables pour stocker les ARN et les montants extraits
+    arn_list = []
+    amount_list = []
+    #motif_list = []
+    authorization_list = []  # Liste pour stocker les autorisation
+    transaction_dates_list = []  # Liste pour stocker les dates de transactions
+
+    
     for section in record_sections:
-        # Extract ARNs (23 digits)
+        # Extraire les ARN de 23 chiffres
         arns = re.findall(r'\d{23}', section)
         amounts = re.findall(r'\d{10}', section)
 
-        # Extract authorization number from EP100A file
-        authorizations = re.findall(r'1009(D|NO|N)(\S{6})', section)  # Extract D or NO or N followed by 6 digits
+        # Extraire le numero d'autorisation du fichier EP100A
+        authorizations = re.findall(r'1009(D|NO|N)(\S{6})', section)  # Extraire D ou NO ou N suivis par les 6 caracteres
 
-        t_dates = re.findall(r'05070000(0|1)(\d{6})', section)  # Find date after 05070000 with 0 or 1
 
-        # List of authorization codes
+        t_dates = re.findall(r'05070000(0|1)(\d{6})', section)  # trouver la date apres l'expression 05070000 avec 0 ou 1
+
+        # Liste des codes d'autorisations
         authorization_codes = [auth[1] for auth in authorizations]  # auth[1] is the 7-digit number
 
         transaction_dates = []
 
         for t_date in t_dates:
-            raw_date = t_date[1]  # Extract date
+            raw_date = t_date[1]  # Extraire la date
             try:
-                # Format date from YYMMDD => new format DD/MM/YYYY
+                # Format de date extraire YYMMDD => nouveau format DD/MM/YYYY
                 formatted_date = datetime.strptime(raw_date, "%y%m%d").strftime("%d/%m/%Y")
                 transaction_dates.append(formatted_date)
             except ValueError:
-                # Handle invalid date extraction
+                # Si l'extraction est invalide gérer son cas
                 transaction_dates.append('')
 
+        
         authorization_list.extend(authorization_codes)
+
         transaction_dates_list.extend(transaction_dates)
 
-        # Use the content of the file if it's a ZIP
-        lines = content.splitlines()  # Split content into lines
+        motifs = []
+        combined_motifs = []
+
+        # On utilise ce bout de code pour utiliser le contenu de fichier en cas de ZIP
+        lines = content.splitlines()  # Spliter le contenu par lignes
 
         for i, line in enumerate(lines):
-            # Detect motifs in the current line
+            # Detecter le motif dans la ligne actuelle
             if re.match(r'^\s*V\d{4}', line):
                 motif = line.strip()
                 
-                # Check if the next line contains the continuation of the motif
+                # Checker si la ligne suivante contient la suite du motif
                 if i + 1 < len(lines) and lines[i + 1].strip():
-                    motif += " " + lines[i + 1].strip()  # Add next line to motif
+                    motif += " " + lines[i + 1].strip()  # Ajouter la ligne suivante au motif
                 
-                motif = re.sub(r'\s+', ' ', motif)  # Replace multiple spaces with a single space
+                
+                motif = re.sub(r'\s+', ' ', motif)  # Remplacer les espaces multiples par un unique espace
                 motifs.append(motif)
 
-        # Check if there is an ARN in the second position and an amount in the seventh (if present)
+        # Vérifier si on a un ARN à la deuxième position et un montant à la septième position (si présents)
         if len(arns) > 1:
             arn_list.append(arns[1])
         if len(amounts) > 6:
-            amount_list.append(float(amounts[6]))  # Convert to float for precise calculation
-
-    # Total number of rejects based on ARNs
+            amount_list.append(float(amounts[6]))  # Convertir en float pour calcul précis
+        combined_motifs = list(motifs)
+    
+    # Nombre total de rejets basé sur les ARN
     total_rejects = len(arn_list)
 
-    # Total amount of rejected transactions
+    # Somme totale des montants rejetés
     total_amount = sum(amount_list) if amount_list else 0
-
-    # Combine motifs at the end
-    combined_motifs = list(motifs)
 
     # Create a dictionary to store results
     rejects_data = {
