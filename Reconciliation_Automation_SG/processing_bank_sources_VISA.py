@@ -1360,19 +1360,23 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
         
     def update_rejects(data, transaction_data):
         for idx, row in data.iterrows():
-            if 'not ok (avec tr.(s) rejetée(s) a extraire)' in row['Rapprochement']:
-                # Remplir uniquement 'Nbre Total de Rejets', laisser 'Montants de rejets' vide
-                filiale = row['FILIALE']
-                bin_number = visa_banks_bin.get(filiale)
-                trans_data = transaction_data.get(bin_number)
+            # Safely get the 'Rapprochement' value and handle non-string cases
+            rapprochement = row.get('Rapprochement', "")
+            if not isinstance(rapprochement, str):
+                data.at[idx, 'Rapprochement'] = "ok"
+                continue
+            
+            filiale = row['FILIALE']
+            bin_number = visa_banks_bin.get(filiale)
+            trans_data = transaction_data.get(bin_number)
+
+            if 'not ok (avec tr.(s) rejetée(s) a extraire)' in rapprochement:
+                # Fill only 'Nbre Total de Rejets', leave 'Montants de rejets' empty
                 if trans_data:
                     data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
-                    data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
-            elif 'not ok' in row['Rapprochement']:
-                # Remplir 'Nbre Total de Rejets' et 'Montants de rejets' les deux
-                filiale = row['FILIALE']
-                bin_number = visa_banks_bin.get(filiale)
-                trans_data = transaction_data.get(bin_number)
+                    data.at[idx, 'Montant de Rejets'] = ""  # Leave it empty as requested
+            elif 'not ok' in rapprochement:
+                # Fill both 'Nbre Total de Rejets' and 'Montants de rejets'
                 if trans_data:
                     data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
                     data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
