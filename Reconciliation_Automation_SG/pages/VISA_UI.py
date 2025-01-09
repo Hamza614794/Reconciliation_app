@@ -24,9 +24,6 @@ def upload_all_sources():
             total_transactions['Cybersource'] = VISA_transactions_cybersource['NBRE_TRANSACTION'].sum()
 
        
-   
-
-
     if uploaded_pos_file:
         pos_file_path = save_uploaded_file(uploaded_pos_file)
         validate_file_name_and_date(uploaded_pos_file.name, 'POS', date_to_validate=None)
@@ -36,9 +33,6 @@ def upload_all_sources():
         total_transactions['POS'] = VISA_transactions_pos['NBRE_TRANSACTION'].sum()
 
         
-
-
-
     if uploaded_sai_manuelle_file:
             sai_manuelle_file_path = save_uploaded_file(uploaded_sai_manuelle_file)
             validate_file_name_and_date(uploaded_sai_manuelle_file.name, 'SAIS_MANU', date_to_validate=None)
@@ -46,8 +40,6 @@ def upload_all_sources():
             VISA_transactions_sai_manuelle = df_sai_manuelle[df_sai_manuelle['RESEAU'] == 'VISA INTERNATIONAL']
             total_transactions['Saisie Manuelle'] = VISA_transactions_sai_manuelle['NBRE_TRANSACTION'].sum()
   
-        
-
     return df_cybersource, df_sai_manuelle, df_pos
 
 
@@ -78,99 +70,103 @@ def handle_recon(
     filtered_saisie_manuelle_df,
     filtered_pos_df,
     zip_file_path,
-    zip_reject_path
+    zip_reject_path,
 ):
-    
     if uploaded_recycled_file:
         # Save the uploaded recycled file
         recycled_file_path = save_uploaded_file(uploaded_recycled_file)
         df_recyc = pd.read_excel(recycled_file_path)
 
-        st.write ("### Les rejets présents dans le fichier ###")
+        st.write("### Les rejets présents dans le fichier ###")
         st.dataframe(df_recyc)
         st.write("La date du filtrage : ", filtering_date)
 
-        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            # Lister tous les fichiers dans le ZIP
+        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
             for file_name in zip_ref.namelist():
-                if file_name.endswith('.TXT'):
-
+                if file_name.endswith(".TXT"):
                     with zip_ref.open(file_name) as file:
-                        content = file.read().decode('utf-8')
-                        # Appliquer l'extraction des données sur le fichier
-                        #transaction_data = extract_transaction_data(file_name, content)
-                        #transaction_list.append(transaction_data)
-                        #transaction_list = []
-                        #transaction_data = extract_transaction_data(file_name, content)
-                        #transaction_list.append(transaction_data)
-                        #print(transaction_list)
+                        content = file.read().decode("utf-8")
                         print(file_name)
+
         # Perform merging with recycled data
-        result_df= merging_with_recycled(
+        result_df = merging_with_recycled(
             recycled_file_path,
             filtered_cybersource_df,
             filtered_saisie_manuelle_df,
             filtered_pos_df,
             filtering_date,
-            file_name, content, zip_file_path, zip_reject_path
+            file_name,
+            content,
+            zip_file_path,
+            zip_reject_path,
         )
         st.header("Résultats de réconciliation")
-        #st.dataframe(result_df, use_container_width=True)
-        #st.dataframe(result_df.style.apply(highlight_non_reconciliated_row, axis=1))
+
+        # Format amounts
         def format_amount(x):
             if isinstance(x, float):
                 return f"{x:.1f}"  # Keeps only 2 decimal places
-            return x  # Return as-is for non-float types
+            return x
 
-        # Apply the formatting to the relevant columns (replace 'amount_column' with actual column names)
         formatted_df = result_df.copy()
-        for column in ['Montant Total de Transactions', 'Montant de Rejets', 'Montant de Transactions (Couverture)']:  # Replace with actual amount columns
+        for column in [
+            "Montant Total de Transactions",
+            "Montant de Rejets",
+            "Montant de Transactions (Couverture)",
+        ]:
             formatted_df[column] = formatted_df[column].apply(format_amount)
 
+        # Update Rapprochement where Nbre Total de Rejets == 0
+        formatted_df.loc[
+            formatted_df["Nbre Total de Rejets"] == 0, "Rapprochement"
+        ] = "ok"
+
         # Apply the styling function and display
-        #st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         return formatted_df
+
     else:
-        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            # Lister tous les fichiers dans le ZIP
+        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
             for file_name in zip_ref.namelist():
-                if file_name.endswith('.TXT'):
-
+                if file_name.endswith(".TXT"):
                     with zip_ref.open(file_name) as file:
-                        content = file.read().decode('utf-8')
-                        # Appliquer l'extraction des données sur le fichier
-                        #transaction_data = extract_transaction_data(file_name, content)
-                        #transaction_list.append(transaction_data)
-                        #transaction_list = []
-                        #transaction_data = extract_transaction_data(file_name, content)
-                        #transaction_list.append(transaction_data)
-                        #print(transaction_list)
+                        content = file.read().decode("utf-8")
                         print(file_name)
-        
 
-        # Handle case without recycled file
         result_df, total_nbre_transactions = merging_sources_without_recycled(
-            filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, file_name, content, zip_file_path, zip_reject_path
+            filtered_cybersource_df,
+            filtered_saisie_manuelle_df,
+            filtered_pos_df,
+            file_name,
+            content,
+            zip_file_path,
+            zip_reject_path,
         )
         st.header("Résultats de réconciliation")
-        #st.dataframe(result_df, use_container_width=True)
-        #st.dataframe(result_df.style.apply(highlight_non_reconciliated_row, axis=1))
+
+        # Format amounts
         def format_amount(x):
             if isinstance(x, float):
-                return f"{x:.1f}"  # Keeps only 2 decimal places
-            return x  # Return as-is for non-float types
+                return f"{x:.1f}"
+            return x
 
-        # Apply the formatting to the relevant columns (replace 'amount_column' with actual column names)
         formatted_df = result_df.copy()
-        for column in ['Montant Total de Transactions', 'Montant de Rejets', 'Montant de Transactions (Couverture)']:  # Replace with actual amount columns
+        for column in [
+            "Montant Total de Transactions",
+            "Montant de Rejets",
+            "Montant de Transactions (Couverture)",
+        ]:
             formatted_df[column] = formatted_df[column].apply(format_amount)
 
+        # Update Rapprochement where Nbre Total de Rejets == 0
+        formatted_df.loc[
+            formatted_df["Nbre Total de Rejets"] == 0, "Rapprochement"
+        ] = "ok"
+
         # Apply the styling function and display
-        #st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         return formatted_df
-        #return result_df
+
 
 
 def result(

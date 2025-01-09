@@ -538,11 +538,10 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
                 print(f"Formule sans calcul appliquée oui ou non ?: {formule_calcul}\n")
                 if formule:
                     return 'ok'
-
-
                 else:
-                    #print(total_transactions)
-                    #print(transaction_count + merchandise_credit)
+                    print(total_transactions)
+                    print("crd v + Trans c")
+                    print(transaction_count + merchandise_credit)
                     return 'not ok (avec tr.(s) rejetée(s) a extraire)'
                 
             elif transaction_type == 'CASH ADVANCE':
@@ -1605,6 +1604,9 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
             filiale = row['FILIALE']
             bin_number = visa_banks_bin.get(filiale)
 
+            #if row['Type'] == "ACHAT" and row['Nbre Total de Rejets'] == 0:
+                #data.at[idx, 'Rapprochement'] = 'ok'
+
             # Check if Rapprochement is a string before using 'in'
             rapprochement_status = str(row['Rapprochement']) if not pd.isna(row['Rapprochement']) else ""
 
@@ -1634,8 +1636,8 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
                     lambda row: row['Montant Total de Transactions'] - row['Montant de Rejets'],
                     axis=1
                 )
-        
 
+            
     # Afficher les transactions rejetées pour chaque filiale, en se basant sur le BIN
     for reject in rejects_list:
         print(reject)
