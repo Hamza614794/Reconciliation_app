@@ -101,7 +101,7 @@ def handle_recon(
             zip_file_path,
             zip_reject_path,
         )
-        st.header("Résultats de réconciliation")
+        #st.header("Résultats de réconciliation")
 
         # Format amounts
         def format_amount(x):
@@ -109,21 +109,17 @@ def handle_recon(
                 return f"{x:.1f}"  # Keeps only 2 decimal places
             return x
 
-        formatted_df = result_df.copy()
-        for column in [
-            "Montant Total de Transactions",
-            "Montant de Rejets",
-            "Montant de Transactions (Couverture)",
-        ]:
-            formatted_df[column] = formatted_df[column].apply(format_amount)
+        formatted_df = pd.DataFrame()  # valeur par défaut, même si result_df est None ou vide
 
-        # Update Rapprochement where Nbre Total de Rejets == 0
-        formatted_df.loc[
-            formatted_df["Nbre Total de Rejets"] == 0, "Rapprochement"
-        ] = "ok"
+        if result_df is not None and not result_df.empty:
+            formatted_df = result_df.copy()
+            for column in [
+                "Montant Total de Transactions",
+                "Montant de Transactions (Couverture)",
+            ]:
+                formatted_df[column] = formatted_df[column].apply(format_amount)
 
-        # Apply the styling function and display
-        st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
+        # Return safely, formatted_df existe toujours
         return formatted_df
 
     else:
@@ -143,7 +139,7 @@ def handle_recon(
             zip_file_path,
             zip_reject_path,
         )
-        st.header("Résultats de réconciliation")
+        #st.header("Résultats de réconciliation")
 
         # Format amounts
         def format_amount(x):
@@ -154,18 +150,13 @@ def handle_recon(
         formatted_df = result_df.copy()
         for column in [
             "Montant Total de Transactions",
-            "Montant de Rejets",
             "Montant de Transactions (Couverture)",
         ]:
             formatted_df[column] = formatted_df[column].apply(format_amount)
 
-        # Update Rapprochement where Nbre Total de Rejets == 0
-        formatted_df.loc[
-            formatted_df["Nbre Total de Rejets"] == 0, "Rapprochement"
-        ] = "ok"
 
         # Apply the styling function and display
-        st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
+        #st.dataframe(formatted_df.style.apply(highlight_non_reconciliated_row, axis=1))
         return formatted_df
 
 
@@ -306,7 +297,7 @@ def process_zip_and_extract_EP100(zip_file=None, temp_dir="temp_unzipped"):
         for root, _, files in os.walk(temp_dir):
             for file in files:
                 file_path = os.path.join(root, file)
-                st.write("Processing file:", file_path)
+                #st.write("Processing file:", file_path)
 
                 # Read file content safely
                 try:
@@ -468,7 +459,7 @@ def main():
                 st.success("Fichier traité avec succès !")
                 
                 # Display extracted data
-                st.write("### Rejets extraits des rapports EP100A")
+                st.write("### Rejets extraits des rapports")
                 st.dataframe(ep100_data)
                 
                 # Allow download of the processed data
@@ -536,7 +527,7 @@ def main():
                     ep100_data = process_zip_and_extract_EP100(zip_uploaded_visa_EP100_204)
                     df_result = handle_recon(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)
                     #df_result = result(filtered_cybersource_df, filtered_saisie_manuelle_df, filtered_pos_df, zip_uploaded_visa_EP747, zip_uploaded_visa_EP100_204)
-                    download_file(recon=True, df=df_result, file_partial_name='results_recon_VISA', button_label=":arrow_down: Téléchargez les résultats de réconciliation", run_date=0)      
+                    #download_file(recon=True, df=df_result, file_partial_name='results_recon_VISA', button_label=":arrow_down: Téléchargez les résultats de réconciliation", run_date=0)      
             else:
                 st.warning("Charger les rapports EP 100 et les sources pour continuer")
     except Exception as e:
