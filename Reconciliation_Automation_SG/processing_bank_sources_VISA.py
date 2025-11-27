@@ -377,8 +377,8 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
             "CASH ADVANCE": None,
             "Nbr de transactions (CLEARING CURR EUR POUR MDG)": None,
             "CREDIT VOUCHER": None,
-            "total de rejets" : transaction_rejects_count,
-            "total de xof rejetées" : xof_rejects_count
+            #"total de rejets" : transaction_rejects_count,
+            #"total de xof rejetées" : xof_rejects_count
         }
 
         # Ajouter le nombre de transactions MANUAL CASH (CASH ADVANCE)
@@ -472,7 +472,7 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
         total_count = safe_float(trans_data.get('Nbr de transactions (CLEARING CURR EUR POUR MDG)'))
         manual_cash = safe_float(trans_data.get('CASH ADVANCE'))
         merchandise_credit = safe_float(trans_data.get('CREDIT VOUCHER'))
-        rejects = safe_float(trans_data.get('total de rejets'))
+        #rejects = safe_float(trans_data.get('total de rejets'))
         #xof_rejects = safe_float(trans_data.get('total de xof rejetées'))
 
         # Get sommes pré-calculées à travers les donnèes groupées
@@ -585,17 +585,17 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
                 filiale = row['FILIALE']
                 bin_number = visa_banks_bin.get(filiale)
                 trans_data = transaction_data.get(bin_number)
-                if trans_data:
-                    data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
-                    data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
+                #if trans_data:
+                    #data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
+                    #data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
             elif 'not ok' in rapprochement:
                 # Fill both 'Nbre Total de Rejets' and 'Montants de rejets'
                 filiale = row['FILIALE']
                 bin_number = visa_banks_bin.get(filiale)
                 trans_data = transaction_data.get(bin_number)
-                if trans_data:
-                    data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
-                    data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
+                #if trans_data:
+                    #data.at[idx, 'Nbre Total de Rejets'] = trans_data.get('total de rejets', 0)
+                    #data.at[idx, 'Montant de Rejets'] = trans_data.get('total de xof rejetées', 0)
 
     
 
@@ -645,8 +645,8 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
             rejects_data = {
                 "file": file_path,
                 "Numero de BIN": bin_number,
-                "total de rejets": transaction_rejects_count,
-                "total de xof rejetées": xof_rejects_count
+                #"total de rejets": transaction_rejects_count,
+                #"total de xof rejetées": xof_rejects_count
             }
 
             return rejects_data
@@ -1166,8 +1166,8 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
             "CASH ADVANCE": None,
             "Nbr de transactions (CLEARING CURR EUR POUR MDG)": None,
             "CREDIT VOUCHER": None,
-            "total de rejets" : transaction_rejects_count,
-            "total de xof rejetées" : xof_rejects_count
+            #"total de rejets" : transaction_rejects_count,
+            #"total de xof rejetées" : xof_rejects_count
         }
 
         # Ajouter le nombre de transactions MANUAL CASH (CASH ADVANCE)
@@ -1765,8 +1765,8 @@ def extract_transaction_data(file_path, content):
             "CASH ADVANCE": None,
             "Nbr de transactions (CLEARING CURR EUR POUR MDG)": None,
             "CREDIT VOUCHER": None,
-            "total de rejets" : transaction_rejects_count,
-            "total de xof rejetées" : xof_rejects_count
+            #"total de rejets" : transaction_rejects_count,
+            #"total de xof rejetées" : xof_rejects_count
         }
 
         # Ajouter le nombre de transactions MANUAL CASH (CASH ADVANCE)
@@ -1837,8 +1837,8 @@ def extract_rejects_data(file_path, content):
         rejects_data = {
             "file": file_path,
             "Numero de BIN": bin_number,
-            "total de rejets": transaction_rejects_count,
-            "total de xof rejetées": xof_rejects_count
+            #"total de rejets": transaction_rejects_count,
+            #"total de xof rejetées": xof_rejects_count
         }
 
         rejects_list = []
@@ -1846,12 +1846,12 @@ def extract_rejects_data(file_path, content):
         rejects_data_dict_EP100 = {}
         for entry in rejects_list:
             bin_number = entry['Numero de BIN']
-            total_rejects = int(entry['total de rejets']) if entry['total de rejets'] != 'None' else 0
-            total_xof_rejects = int(entry['total de xof rejetées']) if entry['total de xof rejetées'] != 'None' else 0
-            rejects_data_dict_EP100[bin_number] = {
-                'Total Rejects': total_rejects, # Nombre de rejets
-                'Total Amount': total_xof_rejects  # XOFS rejetées
-            }
+            #total_rejects = int(entry['total de rejets']) if entry['total de rejets'] != 'None' else 0
+            #total_xof_rejects = int(entry['total de xof rejetées']) if entry['total de xof rejetées'] != 'None' else 0
+            #rejects_data_dict_EP100[bin_number] = {
+                #'Total Rejects': total_rejects, # Nombre de rejets
+                #'Total Amount': total_xof_rejects  # XOFS rejetées
+            #}
         return rejects_list
     else:
         return {"file": file_path, "error": "ACQUIRER TRANSACTIONS section not found."}
