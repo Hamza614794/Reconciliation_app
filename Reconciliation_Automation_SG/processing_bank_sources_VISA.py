@@ -1857,157 +1857,153 @@ def extract_rejects_data(file_path, content):
         return {"file": file_path, "error": "ACQUIRER TRANSACTIONS section not found."}
     
 
+def extract_EP_rejects(file_path, file_content):
+    """
+    Extracts reject transactions from EP-100A OUTGOING or EP-204A INCOMING VISANET reports.
 
+    Parameters:
+        file_path (str): Path to the file.
+        file_content (str | bytes): Content of the file.
 
+    Returns:
+        pd.DataFrame: Extracted reject transactions.
+    """
 
-# Fonction pour extraire les rejets VISA OUTGOING (EP100)
-def extract_EP_rejects(file_path, content):
+    # Extraire le BIN à partir du fichier
     filename = os.path.basename(file_path)
-    bin_number = filename.split('_')[0]  # Extract BIN from filename
+    bin_number = filename.split('_')[0]
 
-    filiale_name = next((name for name, bin_code in visa_banks_bin.items() if bin_code == bin_number), None)
+    # Décoder le contenu si bytes
+    if isinstance(file_content, bytes):
+        content = file_content.decode("utf-8", errors="ignore")
+    else:
+        content = file_content
 
-    # Find all RECORD sections in the EP100 files
-    record_sections = re.findall(
-        r'\s*RECORD\s+----\+----1----\+----2----\+----3----\+----4----\+----5----\+----6----\+----7----\+----8----\+----9----\+---10\s+.*?\s+.*?(.*?)(?=\s*RECORD\s+|$)', 
-        content, re.DOTALL
-    )
+    # Split en lignes
+    lines = content.splitlines()
 
-    # Variables to store ARNs and extracted amounts
-    arn_list = []
-    amount_list = []
-    authorization_list = []  # List to store authorization codes
-    transaction_dates_list = []  # List to store transaction dates
+    # Start patterns: EP-100A OUTGOING or EP-204A INCOMING
+    section_start_patterns = [
+        "REPORT EP-100A  OUTGOING INTERCHANGE",
+        "REPORT EP-204A  INCOMING INTERCHANGE"
+    ]
 
-    # Initialize motifs and combined_motifs outside the loop
-    motifs = []
-    combined_motifs = []
+    # End tag
+    section_end_patterns = [re.compile(r"----\s+Additional Data")]
 
-     # Variables pour stocker les ARN et les montants extraits
-    arn_list = []
-    amount_list = []
-    #motif_list = []
-    authorization_list = []  # Liste pour stocker les autorisation
-    transaction_dates_list = []  # Liste pour stocker les dates de transactions
+    # Identifier les blocs de sections
+    section_blocks = []
+    start_index = None
+    for i, line in enumerate(lines):
+        if any(start in line for start in section_start_patterns):
+            start_index = i
+        if start_index is not None and any(p.search(line) for p in section_end_patterns):
+            section_blocks.append((start_index, i))
+            start_index = None
 
-    
-    for section in record_sections:
-        # Extraire les ARN de 23 chiffres
-        arns = re.findall(r'\d{23}', section)
-        amounts = re.findall(r'\d{10}', section)
+    extracted_data = []
 
-        # Extraire le numero d'autorisation du fichier EP100A
-        authorizations = re.findall(r'1009(D|NO|N)(\S{6})', section)  # Extraire D ou NO ou N suivis par les 6 caracteres
+    for start, end in section_blocks:
+        section_lines = lines[start:end]
+        section_text = ' '.join(section_lines)
 
+        # Regex patterns
+        arn_pattern = re.compile(r"Acquirer Reference Nbr\s+(\*?(?!Usage\s)\S+)")
+        purchase_date_pattern = re.compile(r"Purchase Date\s+(\*?(?!Settlement\s)\S+)")
+        currency_pattern = re.compile(r"Source Currency Code\s+(\*?(?!Cardholder\s)\S+)")
+        purchase_amount_pattern = re.compile(r"TRANSACTION AMOUNT\s+(\*?(?!REJECT\s)\S+)")
+        authorization_code_pattern = re.compile(r"Authorization Code\s+(\*?(?!Source\s)\S+)")
 
-        t_dates = re.findall(r'05070000(0|1)(\d{6})', section)  # trouver la date apres l'expression 05070000 avec 0 ou 1
-
-        # Liste des codes d'autorisations
-        authorization_codes = [auth[1] for auth in authorizations]  # auth[1] is the 7-digit number
-
-        transaction_dates = []
-
-        for t_date in t_dates:
-            raw_date = t_date[1]  # Extraire la date
-            try:
-                # Format de date extraire YYMMDD => nouveau format DD/MM/YYYY
-                formatted_date = datetime.strptime(raw_date, "%y%m%d").strftime("%d/%m/%Y")
-                transaction_dates.append(formatted_date)
-            except ValueError:
-                # Si l'extraction est invalide gérer son cas
-                transaction_dates.append('')
-
-        
-        authorization_list.extend(authorization_codes)
-
-        transaction_dates_list.extend(transaction_dates)
-
+        # Extract motifs / reject reasons
         motifs = []
-        combined_motifs = []
+        collecting = False
+        current_motif = []
+        for line in section_lines:
+            if "REJECT REASON" in line:
+                collecting = True
+                current_motif.append(line.split("REJECT REASON", 1)[1].strip())
+                continue
+            if collecting:
+                if re.search(r"----\s+Required Data", line):
+                    collecting = False
+                    motifs.append(" ".join(current_motif).strip())
+                    current_motif = []
+                else:
+                    current_motif.append(line.strip())
+        if current_motif:
+            motifs.append(" ".join(current_motif).strip())
 
-        # On utilise ce bout de code pour utiliser le contenu de fichier en cas de ZIP
-        lines = content.splitlines()  # Spliter le contenu par lignes
+        # Extract other fields
+        matches_arn = arn_pattern.findall(section_text)
+        matches_currency = currency_pattern.findall(section_text)
+        matches_authorization_code = authorization_code_pattern.findall(section_text)
+        matches_p_amount = [float(amt.replace(',', '')) for amt in purchase_amount_pattern.findall(section_text)]
+        matches_p_date_raw = purchase_date_pattern.findall(section_text)
+        matches_processing_date = [(datetime.today() - timedelta(days=0)).strftime('%d%m%y')]
 
-        for i, line in enumerate(lines):
-            # Detecter le motif dans la ligne actuelle
-            if re.match(r'^\s*V\d{4}', line):
-                motif = line.strip()
-                
-                # Checker si la ligne suivante contient la suite du motif
-                if i + 1 < len(lines) and lines[i + 1].strip():
-                    motif += " " + lines[i + 1].strip()  # Ajouter la ligne suivante au motif
-                
-                
-                motif = re.sub(r'\s+', ' ', motif)  # Remplacer les espaces multiples par un unique espace
-                motifs.append(motif)
+        # Format dates
+        formatted_p_date = []
+        for d in matches_p_date_raw:
+            try:
+                formatted_p_date.append(datetime.strptime(d, "%Y%m%d").strftime("%d/%m/%Y"))
+            except ValueError:
+                formatted_p_date.append(d)
 
-        # Vérifier si on a un ARN à la deuxième position et un montant à la septième position (si présents)
-        if len(arns) > 1:
-            arn_list.append(arns[1])
-        if len(amounts) > 6:
-            amount_list.append(float(amounts[6]))  # Convertir en float pour calcul précis
-        combined_motifs = list(motifs)
-    
-    # Nombre total de rejets basé sur les ARN
-    total_rejects = len(arn_list)
+        formatted_processing_date = []
+        for d in matches_processing_date:
+            try:
+                formatted_processing_date.append(datetime.strptime(d, "%d%m%y").strftime("%d/%m/%Y"))
+            except ValueError:
+                formatted_processing_date.append(d)
 
-    # Somme totale des montants rejetés
-    total_amount = sum(amount_list) if amount_list else 0
+        # Normalize lengths
+        max_length = max(len(matches_arn), len(formatted_p_date), len(matches_currency),
+                         len(matches_p_amount), len(matches_authorization_code), len(motifs),
+                         len(formatted_processing_date))
 
-    # Create a dictionary to store results
-    rejects_data = {
-        "Filiale": filiale_name,
-        #"file": file_path,
-        #"BIN": bin_number,
-        "ARNs": arn_list,
-        "Authorization Codes": authorization_list,
-        "Transaction dates": transaction_dates_list,
-        "Amounts": amount_list,
-        "Motifs": combined_motifs,
-        "Total Rejects": total_rejects,  # Total number of rejects
-        "Total Amount": total_amount  # Total amount rejected
-    }
+        def pad_list(lst, length, fill=""):
+            return lst + [fill]*(length - len(lst))
 
-    # Exporter les résultats dans un format CSV
-    data_for_export = []
+        matches_arn = pad_list(matches_arn, max_length)
+        formatted_p_date = pad_list(formatted_p_date, max_length)
+        matches_p_amount = pad_list(matches_p_amount, max_length)
+        matches_authorization_code = pad_list(matches_authorization_code, max_length)
+        motifs = pad_list(motifs, max_length)
+        formatted_processing_date = pad_list(formatted_processing_date, max_length)
 
-    # Create lists directly from rejects_data
-    filiale = rejects_data.get("Filiale", "")
-    arns = rejects_data.get("ARNs", [])
-    authorization_codes = rejects_data.get("Authorization Codes", [])
-    transaction_dates = rejects_data.get("Transaction dates", [])
-    amounts = rejects_data.get("Amounts", [])
-    motifs = rejects_data.get("Motifs", [])
+        # Build rows
+        rows = []
+        for i in range(max_length):
+            motif = motifs[i]
+            reasons = re.findall(r'(V\d{4})(.*?)(?=\s*V\d{4}|$)', motif)
+            row = {
+                "BIN": bin_number,
+                "PROCESSING_DATE": formatted_processing_date[i],
+                "MICROFILM_REF_NUMBER": matches_arn[i],
+                "TRANSACTION_CURRENCY": matches_currency[i],
+                "TRANSACTION_AMOUNT": matches_p_amount[i],
+                "AUTHORISATION_CODE": matches_authorization_code[i],
+                "TRANSACTION_DATE": formatted_p_date[i],
+                "TYPE_REJET": "REJET EP"
+            }
+            # Add up to 4 reasons
+            for idx in range(1,5):
+                if idx <= len(reasons):
+                    vcode, message = reasons[idx-1]
+                    row[f"ERROR_NUMBER_{idx}"] = vcode.strip().lstrip("V")
+                    row[f"ERROR_MESSAGE_{idx}"] = message.strip()
+                else:
+                    row[f"ERROR_NUMBER_{idx}"] = ""
+                    row[f"ERROR_MESSAGE_{idx}"] = ""
+            rows.append(row)
 
-    # Ensure the lists have the same length by filling missing elements with empty strings
-    max_length = max(len(arns), len(amounts), len(motifs))
-    arns.extend([""] * (max_length - len(arns)))
-    authorization_codes.extend([""] * (max_length - len(authorization_codes)))
-    transaction_dates.extend([""] * (max_length - len(transaction_dates)))
-    #currency_codes.extend([""] * (max_length - len(currency_codes)))
-    amounts.extend([""] * (max_length - len(amounts)))
-    motifs.extend([""] * (max_length - len(motifs)))
+        extracted_data.append(pd.DataFrame(rows))
 
+    if extracted_data:
+        return pd.concat(extracted_data, ignore_index=True)
+    else:
+        return pd.DataFrame()
 
-    for arn, amount, authorization_code, transaction_date, motif in zip(arns, amounts, authorization_codes, transaction_dates, motifs):
-        rejectes_transactions = {
-            "Filiale": filiale,
-            "ARN": arn,
-            "Authorization code": authorization_code,
-            "Transaction Date": transaction_date,
-            "Amount": amount,
-            "Motif": motif,
-        }
-        data_for_export.append(rejectes_transactions)
-
-    # Create a DataFrame and export
-    df =  pd.DataFrame(data_for_export)
-
-    # Afficher les résultats
-    print("data", df)
-
-
-    return df
 
 
 

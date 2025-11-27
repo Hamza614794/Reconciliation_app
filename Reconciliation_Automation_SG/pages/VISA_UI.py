@@ -7,6 +7,7 @@ import zipfile
 from datetime import datetime
 import plotly.graph_objects as go
 from Reconciliation_Automation_SG.processing_bank_sources_VISA import *
+import shutil
 
 
 def upload_all_sources():
@@ -276,16 +277,22 @@ def process_zip_and_extract(zip_file, temp_dir="temp_unzipped"):
 
 def process_zip_and_extract_EP100(zip_file=None, temp_dir="temp_unzipped"):
     """
-    Process the uploaded ZIP file, extract all files, and process using `extract_transaction_data`.
-    If the ZIP file is not provided, skip processing and return an empty DataFrame.
+    Process the uploaded ZIP file, extract all files, and process using `extract_EP_rejects`.
+    Handles EP-100A OUTGOING and EP-204A INCOMING VISANET reports.
+    
+    Parameters:
+        zip_file (str | file-like): Path to the ZIP file or file-like object.
+        temp_dir (str): Temporary folder to unzip files.
+
+    Returns:
+        pd.DataFrame: Combined extracted data.
     """
     try:
-        # Skip processing if no ZIP file is provided
         if not zip_file:
             st.warning("No ZIP file provided. Skipping extraction.")
-            return pd.DataFrame()  # Return an empty DataFrame
+            return pd.DataFrame()
 
-        # Ensure temp directory exists
+        # Ensure temporary directory exists
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
@@ -293,40 +300,45 @@ def process_zip_and_extract_EP100(zip_file=None, temp_dir="temp_unzipped"):
         with zipfile.ZipFile(zip_file, 'r') as z:
             z.extractall(temp_dir)
 
-        # Collect extracted data
         all_file_data = []
+
+        # Walk through all extracted files
         for root, _, files in os.walk(temp_dir):
             for file in files:
                 file_path = os.path.join(root, file)
+                st.write("Processing file:", file_path)
 
-                # Read the file content
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
+                # Read file content safely
+                try:
+                    with open(file_path, 'r', encoding='cp1252', errors='ignore') as f:
+                        content = f.read()
+                except Exception as e:
+                    st.error(f"Error reading file {file_path}: {e}")
+                    continue
 
-                # Extract data from the file
+                # Extract data from file
                 file_data = extract_EP_rejects(file_path, content)
 
-                # If file_data is not empty, append it to the list
                 if not file_data.empty:
                     all_file_data.append(file_data)
 
-        # Concatenate all DataFrames into one
-        if all_file_data:
-            combined_file_data = pd.concat(all_file_data, ignore_index=True)
-        else:
-            combined_file_data = pd.DataFrame()  # Return an empty DataFrame if no data
+        # Combine all DataFrames
+        combined_file_data = pd.concat(all_file_data, ignore_index=True) if all_file_data else pd.DataFrame()
 
-        # Cleanup temp directory
-        for root, _, files in os.walk(temp_dir):
-            for file in files:
-                os.remove(os.path.join(root, file))
-        os.rmdir(temp_dir)
+        # Cleanup temp directory safely
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
-        # Return collected data as a DataFrame
         return combined_file_data
 
     except Exception as e:
         st.error(f"Error while processing the ZIP file: {e}")
+        # Attempt cleanup anyway
+        if os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception as cleanup_error:
+                st.error(f"Failed to cleanup temp directory: {cleanup_error}")
         return pd.DataFrame()
 
     

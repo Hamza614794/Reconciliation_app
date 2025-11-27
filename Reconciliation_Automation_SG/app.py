@@ -24,6 +24,7 @@ def run():
     #st.sidebar.page_link("pages/results_recon.py", label="**:alarm_clock: Historique**")
     #st.sidebar.page_link("pages/Dashboard.py", label="**📊 Tableau de bord**" )
     st.sidebar.page_link("pages/MasterCard_UI.py", label="**🔀 Réconciliation MasterCard**")
+    st.sidebar.page_link("pages/VISA_UI.py", label="**🔀 Réconciliation VISA**")
     #st.sidebar.page_link("pages/calendar_view.py", label="**📆 Vue Agenda**")
     #st.sidebar.page_link("pages/rejects_recycles.py", label="**♻️ Rejets recylés**")
     #st.sidebar.page_link("pages/rejects_recycled_template.py", label="**:arrow_down: Template rejets recylées**")
@@ -173,10 +174,11 @@ def run():
           </svg>
         </span>
       </a>
-
+    </section>
+    <section class="page-contain">
       <a href="./VISA_UI" class="data-card">
-        <h3>Réconciliation Visa</h3>
-        <img src="data:image/png;base64,{base64.b64encode(open(os.path.join(assets_dir, 'visa_logo.png'), 'rb').read()).decode()}" alt="Visa Logo" style="width:200px;height:auto;">
+        <h3>Réconciliation VISA</h3>
+        <img src="data:image/png;base64,{base64.b64encode(open(os.path.join(assets_dir, 'visa_logo.png'), 'rb').read()).decode()}" alt="MasterCard Logo" style="width:200px;height:auto;">
         <span class="link-text">
           Let's Get Started
           <svg width="25" height="16" viewBox="0 0 25 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -184,7 +186,6 @@ def run():
           </svg>
         </span>
       </a>
-   
     </section>
     """
 
