@@ -310,7 +310,7 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
     )
 
     # Afficher le DataFrame complet une seule fois
-    st.write("Transactions reglées par VISA :")
+    #st.write("Transactions extraites :")
     st.dataframe(df_transactions)
 
     for col in ["Nbr de transactions", "CASH ADVANCE", "Nbr de transactions (CLEARING CURR EUR POUR MDG)", "CREDIT VOUCHER"]:
@@ -1485,38 +1485,28 @@ def extract_transaction_data(file_path, content):
 def extract_EP_rejects(file_path, file_content):
     """
     Extracts reject transactions from EP-100A OUTGOING or EP-204A INCOMING VISANET reports.
-
-    Parameters:
-        file_path (str): Path to the file.
-        file_content (str | bytes): Content of the file.
-
-    Returns:
-        pd.DataFrame: Extracted reject transactions.
     """
-
-    # Extraire le BIN à partir du fichier
     filename = os.path.basename(file_path)
     bin_number = filename.split('_')[0]
 
-    # Décoder le contenu si bytes
+    # Decode file content
     if isinstance(file_content, bytes):
         content = file_content.decode("utf-8", errors="ignore")
     else:
         content = file_content
 
-    # Split en lignes
     lines = content.splitlines()
 
-    # Start patterns: EP-100A OUTGOING or EP-204A INCOMING
+    # Start patterns: OUTGOING + INCOMING
     section_start_patterns = [
         "REPORT EP-100A  OUTGOING INTERCHANGE",
         "REPORT EP-204A  INCOMING INTERCHANGE"
     ]
 
-    # End tag
+    # END block pattern
     section_end_patterns = [re.compile(r"----\s+Additional Data")]
 
-    # Identifier les blocs de sections
+    # Detect sections
     section_blocks = []
     start_index = None
     for i, line in enumerate(lines):
@@ -1532,37 +1522,39 @@ def extract_EP_rejects(file_path, file_content):
         section_lines = lines[start:end]
         section_text = ' '.join(section_lines)
 
-        # Regex patterns
-        arn_pattern = re.compile(r"Acquirer Reference Nbr\s+(\*?(?!Usage\s)\S+)")
-        purchase_date_pattern = re.compile(r"Purchase Date\s+(\*?(?!Settlement\s)\S+)")
-        currency_pattern = re.compile(r"Source Currency Code\s+(\*?(?!Cardholder\s)\S+)")
-        purchase_amount_pattern = re.compile(r"TRANSACTION AMOUNT\s+(\*?(?!REJECT\s)\S+)")
-        authorization_code_pattern = re.compile(r"Authorization Code\s+(\*?(?!Source\s)\S+)")
+        # Common patterns
+        arn_pattern = re.compile(r"Acquirer Reference Nbr\s+(\S+)")
+        purchase_date_pattern = re.compile(r"Purchase Date\s+(\S+)")
+        currency_pattern = re.compile(r"Source Currency Code\s+(\S+)")
+        authorization_code_pattern = re.compile(r"Authorization Code\s+(\S+)")
 
-        # Extract motifs / reject reasons
-        motifs = []
-        collecting = False
-        current_motif = []
-        for line in section_lines:
-            if "REJECT REASON" in line:
-                collecting = True
-                current_motif.append(line.split("REJECT REASON", 1)[1].strip())
-                continue
-            if collecting:
-                if re.search(r"----\s+Required Data", line):
-                    collecting = False
-                    motifs.append(" ".join(current_motif).strip())
-                    current_motif = []
-                else:
-                    current_motif.append(line.strip())
-        if current_motif:
-            motifs.append(" ".join(current_motif).strip())
+        # Amount pattern
+        if "EP-204A" in section_text:
+            amount_pattern = re.compile(r"SOURCE AMOUNT\s+(.+)")
+        else:
+            amount_pattern = re.compile(r"TRANSACTION AMOUNT\s+(.+)")
 
-        # Extract other fields
+        # Safe float function
+        def safe_float(value):
+            """Extract a valid float from any string, text, or numeric input."""
+            if value in (None, "", "None"):
+                return 0.0
+            s = str(value).strip()
+            m = re.search(r'[-+]?\d+(?:[.,]\d+)?', s)
+            if m:
+                num = m.group(0).replace(",", ".")
+                try:
+                    return float(num)
+                except:
+                    return 0.0
+            return 0.0
+
         matches_arn = arn_pattern.findall(section_text)
         matches_currency = currency_pattern.findall(section_text)
         matches_authorization_code = authorization_code_pattern.findall(section_text)
-        matches_p_amount = [float(amt.replace(',', '')) for amt in purchase_amount_pattern.findall(section_text)]
+        matches_p_amount_raw = amount_pattern.findall(section_text)
+        matches_p_amount = [safe_float(x) for x in matches_p_amount_raw]
+
         matches_p_date_raw = purchase_date_pattern.findall(section_text)
         matches_processing_date = [(datetime.today() - timedelta(days=0)).strftime('%d%m%y')]
 
@@ -1571,36 +1563,73 @@ def extract_EP_rejects(file_path, file_content):
         for d in matches_p_date_raw:
             try:
                 formatted_p_date.append(datetime.strptime(d, "%Y%m%d").strftime("%d/%m/%Y"))
-            except ValueError:
+            except:
                 formatted_p_date.append(d)
 
         formatted_processing_date = []
         for d in matches_processing_date:
             try:
                 formatted_processing_date.append(datetime.strptime(d, "%d%m%y").strftime("%d/%m/%Y"))
-            except ValueError:
+            except:
                 formatted_processing_date.append(d)
 
-        # Normalize lengths
-        max_length = max(len(matches_arn), len(formatted_p_date), len(matches_currency),
-                         len(matches_p_amount), len(matches_authorization_code), len(motifs),
-                         len(formatted_processing_date))
+        # Extract reject reasons
+        motifs = []
+        collecting = False
+        buffer = []
+        for line in section_lines:
+            if "RETURNED REASON" in line or "REJECT REASON" in line:
+                collecting = True
+                buffer.append(line.split("REASON",1)[1].strip())
+                continue
+            if collecting:
+                if re.search(r"----\s+Required Data", line):
+                    collecting = False
+                    motifs.append(" ".join(buffer))
+                    buffer = []
+                else:
+                    buffer.append(line.strip())
+        if buffer:
+            motifs.append(" ".join(buffer))
 
-        def pad_list(lst, length, fill=""):
+        # Normalize lengths
+        max_length = max(
+            len(matches_arn),
+            len(matches_currency),
+            len(matches_authorization_code),
+            len(matches_p_amount),
+            len(formatted_p_date),
+            len(formatted_processing_date),
+            len(motifs)
+        )
+
+        def pad(lst, length, fill=""):
             return lst + [fill]*(length - len(lst))
 
-        matches_arn = pad_list(matches_arn, max_length)
-        formatted_p_date = pad_list(formatted_p_date, max_length)
-        matches_p_amount = pad_list(matches_p_amount, max_length)
-        matches_authorization_code = pad_list(matches_authorization_code, max_length)
-        motifs = pad_list(motifs, max_length)
-        formatted_processing_date = pad_list(formatted_processing_date, max_length)
+        matches_arn = pad(matches_arn, max_length)
+        matches_currency = pad(matches_currency, max_length)
+        matches_authorization_code = pad(matches_authorization_code, max_length)
+        matches_p_amount = pad(matches_p_amount, max_length, 0)
+        formatted_p_date = pad(formatted_p_date, max_length)
+        motifs = pad(motifs, max_length)
+        formatted_processing_date = pad(formatted_processing_date, max_length)
 
+        # Build rows
         # Build rows
         rows = []
         for i in range(max_length):
             motif = motifs[i]
-            reasons = re.findall(r'(V\d{4})(.*?)(?=\s*V\d{4}|$)', motif)
+
+            # Split motif into individual error blocks
+            # This will match V###/V#### codes or short codes like D2
+            # It returns a list of tuples: (code, description)
+            error_blocks = []
+            pattern = re.compile(r'(V\d{3,4}|[A-Z]\d)\s*(.*?)(?=\s*V\d{3,4}|\s*[A-Z]\d|$)')
+            for match in pattern.finditer(motif):
+                code = match.group(1)
+                desc = match.group(2).strip()
+                error_blocks.append((code, desc))
+
             row = {
                 "BIN": bin_number,
                 "PROCESSING_DATE": formatted_processing_date[i],
@@ -1609,18 +1638,21 @@ def extract_EP_rejects(file_path, file_content):
                 "TRANSACTION_AMOUNT": matches_p_amount[i],
                 "AUTHORISATION_CODE": matches_authorization_code[i],
                 "TRANSACTION_DATE": formatted_p_date[i],
-                "TYPE_REJET": "REJET EP"
+                "TYPE_REJET": "REJET VISA"
             }
-            # Add up to 4 reasons
-            for idx in range(1,5):
-                if idx <= len(reasons):
-                    vcode, message = reasons[idx-1]
-                    row[f"ERROR_NUMBER_{idx}"] = vcode.strip().lstrip("V")
-                    row[f"ERROR_MESSAGE_{idx}"] = message.strip()
+
+            # Fill up to 4 error messages
+            for idx in range(4):
+                if idx < len(error_blocks):
+                    code, desc = error_blocks[idx]
+                    row[f"ERROR_NUMBER_{idx+1}"] = code.lstrip("V")
+                    row[f"ERROR_MESSAGE_{idx+1}"] = desc
                 else:
-                    row[f"ERROR_NUMBER_{idx}"] = ""
-                    row[f"ERROR_MESSAGE_{idx}"] = ""
+                    row[f"ERROR_NUMBER_{idx+1}"] = ""
+                    row[f"ERROR_MESSAGE_{idx+1}"] = ""
+
             rows.append(row)
+
 
         extracted_data.append(pd.DataFrame(rows))
 
