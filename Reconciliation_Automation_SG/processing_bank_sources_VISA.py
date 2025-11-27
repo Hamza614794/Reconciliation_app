@@ -504,7 +504,8 @@ def merging_sources_without_recycled(filtered_cybersource_df, filtered_saisie_ma
         'SG - SENEGAL': '441358',
         'SG - TCHAD': '458250',
         'SG - CONGO': '464012',
-        'SG - GUINEE CONAKRY': '486059'
+        'SG - GUINEE CONAKRY': '486059',
+        'BNI BANK' : '423359'
     }
 
 
@@ -1331,7 +1332,8 @@ def merging_with_recycled(recycled_rejected_file, filtered_cybersource_df, filte
         'SG - SENEGAL': '441358',
         'SG - TCHAD': '458250',
         'SG - CONGO': '464012',
-        'SG - GUINEE CONAKRY': '486059'
+        'SG - GUINEE CONAKRY': '486059',
+        'BNI' : '423359'
     }
 
 
@@ -1365,7 +1367,8 @@ visa_banks_bin = {
     'SG - SENEGAL': '441358',
     'SG - TCHAD': '458250',
     'SG - CONGO': '464012',
-    'SG - GUINEE CONAKRY': '486059'
+    'SG - GUINEE CONAKRY': '486059',
+    'BNI' : '423359'
 }
 
 
